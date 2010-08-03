@@ -226,22 +226,22 @@
 }(jQuery));
 
 //
-// Filtered interface plugin, using both of the above
+// Sifter plugin, using both of the above plugins
 //
 (function($) {
   
   var opts, container, filteredList, filterList;
   
   $.fn.extend({
-    filteredInterface: function(options) {
-      opts = $.extend(true, {}, $.fn.filteredInterface.defaults, options);
+    sifter: function(options) {
+      opts = $.extend(true, {}, $.fn.sifter.defaults, options);
       if (this.length) {
         return this.each(setup);
       }
     }
   });
   
-  $.fn.filteredInterface.defaults = {
+  $.fn.sifter.defaults = {
     filterList: '#filterList',
     filteredList: '#filteredList',
     filterUpdateEvent: 'fl:filtersUpdated',
