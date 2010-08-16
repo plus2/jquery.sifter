@@ -60,16 +60,8 @@
       // Bind to the custom events
       // Using custom events instead of just putting this code in the toggle
       filter
-        .bind("fl:activate", function() {
-          filter
-            .data("active", true)
-            .addClass("active");
-        })
-        .bind("fl:deactivate", function() {
-          filter
-            .data("active", false)
-            .removeClass("active");
-        })
+        .bind("fl:activate", activateFilter)
+        .bind("fl:deactivate", deactivateFilter)
         .data("setup", true); // Record that it has been set up
     }
   }
@@ -96,8 +88,21 @@
   }
   
   function clearFilters () {
-    filters.trigger("fl:deactivate");
+    filters.each(deactivateFilter);
+    updateActiveFilters();
     return false;
+  }
+  
+  function deactivateFilter () {
+    $(this)
+      .data("active", false)
+      .removeClass("active");
+  }
+  
+  function activateFilter () {
+    $(this)
+      .data("active", true)
+      .addClass("active");
   }
   
   function setupHeadingTogglers () {
@@ -134,7 +139,8 @@
         return this.each(setup);
       }
     },
-    setActiveFilters: setActiveFilters
+    setActiveFilters: setActiveFilters,
+    hasContents: hasContents
   });
   
   $.fn.filteredList.defaults = {
@@ -156,7 +162,7 @@
   }
   
   function setupItem () {
-    item = $(this); // Item is probably a row
+    var item = $(this); // Item is probably a row
     // Bind to some custom events for activation and deactivation
     item
       .bind("fl:activate", function() {
@@ -215,6 +221,10 @@
     return $.isArray(active) && active.length > 0;
   }
   
+  function hasContents () {
+    return filtered.filter(':not(.empty-message)').length > 0;
+  }
+  
   function setActiveFilters (filters) {
     if ($.isArray(filters)) {
       container
@@ -263,7 +273,10 @@
   
   // Move the active filter list filters to the filtered list
   function applyActiveFilters () {
-    filteredList.setActiveFilters(filterList.data("activeFilters"));
+    // Make sure that we have results to filter
+    if (filteredList.hasContents() === true) {
+      filteredList.setActiveFilters(filterList.data("activeFilters"));
+    }
   }
   
 }(jQuery));
