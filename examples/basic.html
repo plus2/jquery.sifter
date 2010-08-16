@@ -2,18 +2,18 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>jquery.sifter: basic demo</title>
-    <style type="text/css">
+    <title>jQuery.sifter: colours and tones</title>
+    <style>
       #filterList .active {font-weight:bold}
       #filteredList {list-style:none;margin:0}
-        #filteredList li {display:none;width:5em;margin-left:-4px;height:5em;padding:1em;text-align:center;text-indent:-999em}
+        #filteredList li {display:none;width:5em;margin-left:-4px;height:5em;text-indent:-999em}
         #filteredList li.active {display:inline-block}
     </style>
   </head>
   <body>
-    <h1>Basic demo of jquery.sifter</h1>
+    <h1>Example</h1>
+    <h2>Colours and tones</h2>
     <div id="sifted">
-      <a href="#" title="Clear active filters" class="clear-filters">Clear filters</a>
       <ul id="filterList">
         <li>
           <h3>Tone</h3>
@@ -36,6 +36,7 @@
           </ul>
         </li>
       </ul>
+      <a href="#" title="Clear active filters" class="clear-filters">Clear filters</a>
       <ul id="filteredList">
         <li class="temp-hot tone-really-light" style="background:#FC6">#FC6</li>
         <li class="temp-hot tone-light" style="background:#F66">#F66</li>
@@ -88,7 +89,6 @@
       $(function() {
         // Initialise the sifter plugin
         $('#sifted').sifter({
-          useHeadingTogglers: false,
           filteredListOpts: {
             filteredSelector: 'li'
           }
