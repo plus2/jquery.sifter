@@ -18,7 +18,7 @@
     selector: 'li a',
     groupedBy: 'ul',
     clearFiltersSelector: '.clear-filters',
-    useHeadingTogglers: true,
+    useHeadingTogglers: false,
     headingSelector: 'h5 a'
   };
   
