@@ -6,9 +6,15 @@ Sifter is a jQuery plugin that can be used to implement client&ndash;side [facet
 
 Each facet (a.k.a. filter) has an ID. Any filtered item (i.e. search result) that is relevant to a particular filter uses that filter's ID as a class.
 
+Sifter is composed of 3 plugins:
+
+* _sifter_: listens to the facets and when they're changed, tells the filtered items what to do
+* _filterList_: deals with the facets
+* _filteredList_: deals with the items being filtered
+
 ### Example
 
-_You can find a functioning version of this example in this repository's examples/ directory._
+_You can find a functioning version of this example in this repository's examples directory._
 
 Your markup looks like this:
 
@@ -65,8 +71,8 @@ The required JavaScript:
 
 ## Examples
 
-* *examples/from_readme.html*: a functioning version of the above code
-* *examples/basic.html*: another simple example, although it's almost pretty
+* _examples/from_readme.html_: a functioning version of the above code
+* _examples/basic.html_: another simple example, although it's almost pretty
 
 I will be adding further examples, such as integrating with pagination, showing result counts, auto-complete filters, pre&ndash;loading active filters and use with AJAX.
 
