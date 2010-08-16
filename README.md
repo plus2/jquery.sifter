@@ -8,7 +8,7 @@ Each facet (a.k.a. filter) has an ID. Any filtered item (i.e. search result) tha
 
 ### Example
 
-_You can find a functioning version of this example in the examples/ directory in this repository._
+_You can find a functioning version of this example in this repository's examples/ directory._
 
 Your markup looks like this:
 
@@ -63,9 +63,20 @@ The required JavaScript:
       });
     </script>
 
+## Examples
+
+* *examples/from_readme.html*: a functioning version of the above code
+* *examples/basic.html*: another simple example, although it's almost pretty
+
+I will be adding further examples, such as integrating with pagination, showing result counts, auto-complete filters, pre&ndash;loading active filters and use with AJAX.
+
 ## Requirements
 
-* jQuery (tested with 1.4.2)
+* jQuery 1.4.2
+
+## Browsers
+
+Tested in IE7 & 8, although I can't think of a reason why it shouldn't work in IE6. Firefox, Opera, Safari and Chrome all love it.
 
 ## Contributors
 
