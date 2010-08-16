@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>jquery.sifter: basic demo</title>
+    <style type="text/css">
+      #filterList .active {font-weight:bold}
+      #filteredList {list-style:none;margin:0}
+        #filteredList li {display:none;width:5em;margin-left:-4px;height:5em;padding:1em;text-align:center;text-indent:-999em}
+        #filteredList li.active {display:inline-block}
+    </style>
+  </head>
+  <body>
+    <h1>Basic demo of jquery.sifter</h1>
+    <div id="sifted">
+      <a href="#" title="Clear active filters" class="clear-filters">Clear filters</a>
+      <ul id="filterList">
+        <li>
+          <h3>Tone</h3>
+          <ul>
+            <li><a href="#" title="Really light" id="tone-really-light">Really light</a></li>
+            <li><a href="#" title="Light" id="tone-light">Light</a></li>
+            <li><a href="#" title="Mid" id="tone-mid">Mid</a></li>
+            <li><a href="#" title="Dark" id="tone-dark">Dark</a></li>
+            <li><a href="#" title="Really dark" id="tone-really-dark">Really dark</a></li>
+          </ul>
+        </li>
+        <li>
+          <h3>Temperature</h3>
+          <ul>
+            <li><a href="#" title="Cold" id="temp-cold">Cold</a></li>
+            <li><a href="#" title="Cool" id="temp-cool">Cool</a></li>
+            <li><a href="#" title="Neutral" id="temp-neutral">Neutral</a></li>
+            <li><a href="#" title="Warm" id="temp-warm">Warm</a></li>
+            <li><a href="#" title="Hot" id="temp-hot">Hot</a></li>
+          </ul>
+        </li>
+      </ul>
+      <ul id="filteredList">
+        <li class="temp-hot tone-really-light" style="background:#FC6">#FC6</li>
+        <li class="temp-hot tone-light" style="background:#F66">#F66</li>
+        <li class="temp-hot tone-light" style="background:#FF8000">#FF8000</li>
+        <li class="temp-hot tone-light" style="background:#F00">#F00</li>
+        <li class="temp-warm tone-mid" style="background:#804000">#804000</li>
+        <li class="temp-warm tone-dark" style="background:#800000">#800000</li>
+        <li class="temp-neutral tone-dark" style="background:#808000">#808000</li>
+        <li class="temp-cool tone-dark" style="background:#408000">#408000</li>
+        <li class="temp-hot tone-really-light" style="background:#FF0">#FF0</li>
+        <li class="temp-cool tone-light" style="background:#80FF00">#80FF00</li>
+        <li class="temp-warm tone-really-light" style="background:#FF6">#FF6</li>
+        <li class="temp-cool tone-really-light" style="background:#CF6">#CF6</li>
+        <li class="temp-cold tone-really-light" style="background:#6FC">#6FC</li>
+        <li class="temp-cool tone-really-light" style="background:#6F6">#6F6</li>
+        <li class="temp-cool tone-light" style="background:#00FF80">#00FF80</li>
+        <li class="temp-cold tone-light" style="background:#0FF">#0FF</li>
+        <li class="temp-cool tone-dark" style="background:#008040">#008040</li>
+        <li class="temp-cold tone-dark" style="background:#008080">#008080</li>
+        <li class="temp-cold tone-really-dark" style="background:#000080">#000080</li>
+        <li class="temp-cold tone-really-dark" style="background:#004080">#004080</li>
+        <li class="temp-cold tone-dark" style="background:#00F">#00F</li>
+        <li class="temp-cold tone-mid" style="background:#0080FF">#0080FF</li>
+        <li class="temp-cool tone-mid" style="background:#66F">#66F</li>
+        <li class="temp-cold tone-light" style="background:#6CF">#6CF</li>
+        <li class="temp-warm tone-light" style="background:#C6F">#C6F</li>
+        <li class="temp-warm tone-really-light" style="background:#F6F">#F6F</li>
+        <li class="temp-neutral tone-mid" style="background:#8000FF">#8000FF</li>
+        <li class="temp-warm tone-light" style="background:#F0F">#F0F</li>
+        <li class="temp-neutral tone-really-dark" style="background:#400080">#400080</li>
+        <li class="temp-warm tone-mid" style="background:#800080">#800080</li>
+        <li class="temp-neutral tone-light" style="background:#7F7F7F">#7F7F7F</li>
+        <li class="temp-warm tone-mid" style="background:#800040">#800040</li>
+        <li class="temp-neutral tone-dark" style="background:#4C4C4C">#4C4C4C</li>
+        <li class="temp-neutral tone-dark" style="background:#333">#333</li>
+        <li class="temp-neutral tone-really-dark" style="background:#191919">#191919</li>
+        <li class="temp-neutral tone-really-dark" style="background:#000">#000</li>
+        <li class="temp-neutral tone-really-light" style="background:#FFF">#FFF</li>
+        <li class="temp-neutral tone-really-light" style="background:#E6E6E6">#E6E6E6</li>
+        <li class="temp-neutral tone-light" style="background:#CCC">#CCC</li>
+        <li class="temp-neutral tone-light" style="background:#B3B3B3">#B3B3B3</li>
+        <li class="temp-neutral tone-mid" style="background:#999">#999</li>
+        <li class="temp-neutral tone-mid" style="background:#808080">#808080</li>
+      </ul>
+    </div>
+    <script src="../vendor/jquery-1.4.2.min.js"></script>
+    <script src="../jquery.sifter.js"></script>
+    <script>
+      // On dom ready
+      $(function() {
+        // Initialise the sifter plugin
+        $('#sifted').sifter({
+          useHeadingTogglers: false,
+          filteredListOpts: {
+            filteredSelector: 'li'
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
