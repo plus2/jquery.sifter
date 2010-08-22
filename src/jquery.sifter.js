@@ -81,10 +81,8 @@
         activeFilters.push(grouped);
       }
     });
-    // Store the data
-    container.data("activeFilters", activeFilters);
     // Emit that this happened
-    container.trigger("fl:filtersUpdated");
+    container.trigger("fl:filtersUpdated", [activeFilters]);
   }
   
   function clearFilters () {
@@ -272,10 +270,10 @@
   }
   
   // Move the active filter list filters to the filtered list
-  function applyActiveFilters () {
+  function applyActiveFilters (event, activeFilters) {
     // Make sure that we have results to filter
-    if (filteredList.hasContents() === true) {
-      filteredList.setActiveFilters(filterList.data("activeFilters"));
+    if ($.isArray(activeFilters) && filteredList.hasContents() === true) {
+      filteredList.setActiveFilters(activeFilters);
     }
   }
   
