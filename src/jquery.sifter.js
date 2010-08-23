@@ -300,18 +300,8 @@
     // Set up the plugins
     // We're queueing these because it can get slow when dealing 
     // with a lot of data
-    $(document)
-      .queue('sifter', function() {
-        filteredList.filteredList(opts.filteredListOpts);
-        $(this).dequeue('sifter');
-      })
-      .delay(100, 'sifter')
-      .queue('sifter', function() {
-        filterList.filterList(opts.filterListOpts);
-        $(this).dequeue('sifter');
-      })
-      .delay(100, 'sifter')
-      .dequeue('sifter');
+    filteredList.filteredList(opts.filteredListOpts);
+    filterList.filterList(opts.filterListOpts);
     // When we hear this event, we're going to work
     container.bind(opts.filterUpdateEvent, applyActiveFilters);
     // Trigger callback
