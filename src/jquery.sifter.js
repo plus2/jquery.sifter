@@ -163,47 +163,37 @@
     var item = $(this); // Item is probably a row
     // Bind to some custom events for activation and deactivation
     item
-      .bind("fl:activate", function() {
-        $(this)
-          .data("active", true)
-          .addClass("active");
-      })
-      .bind("fl:deactivate", function() {
-        $(this)
-          .data("active", false)
-          .removeClass("active");
-      });
+      .bind("fl:activate", activateItem)
+      .bind("fl:deactivate", deactivateItem);
     // Visible by default, so let's make sure
     item.trigger("fl:activate");
+  }
+  
+  function activateItem () {
+    $(this)
+      .data("active", true)
+      .addClass("active");
+  }
+  
+  function deactivateItem () {
+    $(this)
+      .data("active", false)
+      .removeClass("active");
   }
   
   function render () {
     var active, rows;
     if (hasActiveFilters() === true) {
-      active = container.data("activeFilters");
-      rows = filtered; // Make a copy of the filtered rows for reduction
-      // Loop through all filter groups
+      active = container.data("activeFilters"); // Fetch the active filters
+      filtered.each(deactivateItem); // Loop through all rows and deactivate
+      rows = filtered; // Make a copy of filtered
+      // Loop through all filter groups. 'this' is an array of class names.
       $.each(active, function() {
-        var filters = this; // An array of class names
-        rows = $.map(rows, function(row, i) {
-          var entry = null; // To be returned and ignored if nothing occurs here
-          $.each(filters, function() {
-            if ($(row).hasClass(this)) {
-              entry = row;
-            }
-          });
-          return entry;
-        });
+        var selector = '.' + this.join(',.'); // Selector for the filters
+        rows = rows.filter(selector); // Reduce stored rows by selector
       });
-      // rows should now contain an array of all rows that match the filter
-      // Loop through all filtered rows and trigger the correct events
-      $(filtered).each(function() {
-        if ($.inArray(this, rows) > -1) {
-          $(this).trigger("fl:activate");
-        } else {
-          $(this).trigger("fl:deactivate");
-        }
-      });
+      // Make rows unique and then activate those that remain
+      $(rows).each(activateItem);
     } else {
       // If no filters are set, we're going to ensure everything is active
       filtered.trigger("fl:activate");
