@@ -20,7 +20,8 @@
     clearFiltersSelector: '.clear-filters',
     useHeadingTogglers: false,
     headingSelector: 'h5 a',
-    filterTypeRegexp: /^(\w+)\-/
+    filterTypeRegexp: /^(\w+)\-/,
+    beforeUpdate: null
   };
   
   function setup () {
@@ -54,6 +55,10 @@
   }
   
   function updateActiveFilters () {
+    // Callback
+    if ($.isFunction(opts.beforeUpdate)) {
+      opts.beforeUpdate.apply(container);
+    }
     // Find all active filters and store data about them on the container
     var activeFilters = filters.filter('.active'),
         grouped = {},
@@ -124,7 +129,7 @@
 //
 (function($) {
   
-  var opts, container, filtered;
+  var opts, container, filtered, parent;
   
   $.fn.extend({
     filteredList: function(options) {
@@ -138,8 +143,10 @@
   });
   
   $.fn.filteredList.defaults = {
-    filteredSelector: "tbody > tr",
-    afterRender: null
+    filteredSelector: 'tbody > tr',
+    afterRender: null,
+    beforeRender: null,
+    activateOnSetup: true
   };
   
   function setup () {
@@ -151,6 +158,8 @@
     // Setup the rows
     filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
     setupFiltered();
+    // Take note of parent element
+    parent = $(filtered[0]).parent();
     // Bind the custom render method
     container.bind("fl:render", render);
   }
@@ -159,12 +168,24 @@
     filtered
       .live("fl:activate", activateItem)
       .live("fl:deactivate", deactivateItem);
-    // Visible by default, so let's make sure
-    activateAll();
+    if (opts.activateOnSetup === true) {
+      // Visible by default, so let's make sure
+      activateAll();
+    }
   }
   
   function activateAll () {
-    filtered.addClass('active');
+    filtered
+      .detach()
+      .addClass('active')
+      .appendTo(parent);
+  }
+
+  function deactivateAll () {
+    filtered
+      .detach()
+      .removeClass('active')
+      .appendTo(parent);
   }
   
   function activateItem () {
@@ -180,26 +201,52 @@
   }
   
   function render () {
-    var active, rows;
-    if (hasActiveFilters() === true) {
-      active = getActive(); // Fetch the active filters
-      filtered.each(deactivateItem); // Loop through all rows and deactivate
-      rows = filtered; // Make a copy of filtered
-      // Loop through all filter groups. 'this' is an array of class names.
-      $.each(active, function() {
-        var selector = '.' + this.join(',.'); // Selector for the filters
-        rows = rows.filter(selector); // Reduce stored rows by selector
-      });
-      // Make rows unique and then activate those that remain
-      $(rows).each(activateItem);
-    } else {
-      // If no filters are set, we're going to ensure everything is active
-      activateAll();
-    }
-    // Run callback
-    if ($.isFunction(opts.afterRender)) {
-      opts.afterRender.apply(container);
-    }
+    // Expensive. Queue it.
+    $(document)
+      .queue('sifter', function() {
+        var active, rows, els;
+        // Run before callback
+        if ($.isFunction(opts.beforeRender)) {
+          opts.beforeRender.apply(container);
+        }
+        if (hasActiveFilters() === true) {
+          active = getActive(); // Fetch the active filters
+          detached = filtered.detach(); // Detach and make a copy of filtered
+          rows = detached;
+          // Loop through all filter groups. 'this' is an array of class names.
+          $.each(active, function() {
+            var selector = '.' + this.join(',.'); // Selector for the filters
+            rows = rows.filter(selector); // Reduce stored rows by selector
+          });
+          // Make rows unique and then activate those that remain
+          els = rows.get();
+          detached.each(function() {
+            var el = $(this);
+            if ($.inArray(this, els) >= 0) {
+              if (el.hasClass('active') === false) {
+                el.addClass('active');
+              }
+            } else {
+              if (el.hasClass('active') === true) {
+                el.removeClass('active');
+              }
+            }
+          });
+          // Add back into the dom
+          parent.append(detached);
+        } else {
+          // If no filters are set, we're going to ensure everything is active
+          activateAll();
+        }
+        // Run after callback
+        if ($.isFunction(opts.afterRender)) {
+          opts.afterRender.apply(container);
+        }
+        
+        $(this).dequeue('sifter');
+      })
+      .delay(100, 'sifter')
+      .dequeue('sifter');
   }
   
   function hasActiveFilters () {
@@ -241,7 +288,8 @@
     filteredList: '#filteredList',
     filterUpdateEvent: 'fl:filtersUpdated',
     filterListOpts: {},
-    filteredListOpts: {}
+    filteredListOpts: {},
+    afterSetup: null
   };
   
   function setup () {
@@ -250,17 +298,39 @@
     filteredList = $(opts.filteredList);
     filterList = $(opts.filterList);
     // Set up the plugins
-    filteredList.filteredList(opts.filteredListOpts);
-    filterList.filterList(opts.filterListOpts);
+    // We're queueing these because it can get slow when dealing 
+    // with a lot of data
+    $(document)
+      .queue('sifter', function() {
+        filteredList.filteredList(opts.filteredListOpts);
+        $(this).dequeue('sifter');
+      })
+      .delay(100, 'sifter')
+      .queue('sifter', function() {
+        filterList.filterList(opts.filterListOpts);
+        $(this).dequeue('sifter');
+      })
+      .delay(100, 'sifter')
+      .dequeue('sifter');
     // When we hear this event, we're going to work
     container.bind(opts.filterUpdateEvent, applyActiveFilters);
+    // Trigger callback
+    if ($.isFunction(opts.afterSetup)) {
+      opts.afterSetup.apply(container);
+    }
   }
   
   // Move the active filter list filters to the filtered list
   function applyActiveFilters (event, activeFilters) {
     // Make sure that we have results to filter
     if ($.isArray(activeFilters) && filteredList.hasContents() === true) {
-      filteredList.setActiveFilters(activeFilters);
+      // Delay this too
+      $(document)
+        .queue('sifter', function() {
+          filteredList.setActiveFilters(activeFilters);
+          $(this).dequeue('sifter');
+        })
+        .dequeue('sifter');
     }
   }
   
