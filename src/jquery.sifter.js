@@ -151,32 +151,30 @@
     // Note that it's filtered
     container.addClass("filtered");
     // Setup the rows
-    filtered = container.find(opts.filteredSelector);
-    filtered.each(setupItem);
+    filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
+    setupFiltered();
     // Bind the custom render method
     container.bind("fl:render", render);
   }
   
-  function setupItem () {
-    var item = $(this); // Item is probably a row
-    // Bind to some custom events for activation and deactivation
-    item
-      .bind("fl:activate", activateItem)
-      .bind("fl:deactivate", deactivateItem);
+  function setupFiltered () {
+    filtered
+      .live("fl:activate", activateItem)
+      .live("fl:deactivate", deactivateItem);
     // Visible by default, so let's make sure
-    item.trigger("fl:activate");
+    activateAll();
+  }
+  
+  function activateAll () {
+    filtered.addClass('active');
   }
   
   function activateItem () {
-    $(this)
-      .data('active', true)
-      .addClass('active');
+    $(this).addClass('active');
   }
   
   function deactivateItem () {
-    $(this)
-      .data('active', false)
-      .removeClass('active');
+    $(this).removeClass('active');
   }
   
   function render () {
@@ -194,7 +192,7 @@
       $(rows).each(activateItem);
     } else {
       // If no filters are set, we're going to ensure everything is active
-      filtered.trigger("fl:activate");
+      activateAll();
     }
     // Run callback
     if ($.isFunction(opts.afterRender)) {
@@ -208,7 +206,7 @@
   }
   
   function hasContents () {
-    return filtered.filter(':not(.empty-message)').length > 0;
+    return filtered.length > 0;
   }
   
   function setActiveFilters (filters) {
