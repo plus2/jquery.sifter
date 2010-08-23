@@ -27,10 +27,8 @@
     // Container should be a UL with child LIs containing their own
     // UL with child LI filters
     container = $(this);
-    // By default, there are no active filters
-    container
-      .data("activeFilters", [])
-      .addClass("isFilterList");
+    // Note that it's setup
+    container.addClass("isFilterList");
     // Find the filter groups
     groups = container.find(opts.groupedBy);
     // Work on the filters themselves
@@ -147,7 +145,7 @@
   function setup () {
     container = $(this);  // This will probably be a table
     // Set this up
-    container.data("activeFilters", []);
+    $.data(container, 'activeFilters', []);
     // Note that it's filtered
     container.addClass("filtered");
     // Setup the rows
@@ -177,10 +175,14 @@
     $(this).removeClass('active');
   }
   
+  function getActive () {
+    return $.data(container, 'activeFilters');
+  }
+  
   function render () {
     var active, rows;
     if (hasActiveFilters() === true) {
-      active = container.data("activeFilters"); // Fetch the active filters
+      active = getActive(); // Fetch the active filters
       filtered.each(deactivateItem); // Loop through all rows and deactivate
       rows = filtered; // Make a copy of filtered
       // Loop through all filter groups. 'this' is an array of class names.
@@ -201,7 +203,7 @@
   }
   
   function hasActiveFilters () {
-    var active = container.data("activeFilters");
+    var active = getActive();
     return $.isArray(active) && active.length > 0;
   }
   
@@ -211,9 +213,8 @@
   
   function setActiveFilters (filters) {
     if ($.isArray(filters)) {
-      container
-        .data("activeFilters", filters)
-        .trigger("fl:render");
+      $.data(container, 'activeFilters', filters);
+      container.trigger("fl:render");
     }
   }
   

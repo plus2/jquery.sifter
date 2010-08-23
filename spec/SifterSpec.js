@@ -9,11 +9,6 @@ describe("jquery.sifter", function() {
     expect($('#filterList').hasClass('isFilterList')).toEqual(true);
     expect($('#filteredList').hasClass('filtered')).toEqual(true);
   });
-    
-  it('should add data properties to the components', function() {
-    expect($.isArray($('#filterList').data('activeFilters'))).toEqual(true);
-    expect($.isArray($('#filteredList').data('activeFilters'))).toEqual(true);
-  });
   
   it('should add methods to filtered component', function() {
     expect($.isFunction($('#filteredList').setActiveFilters)).toEqual(true);
