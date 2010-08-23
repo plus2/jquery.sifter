@@ -157,9 +157,8 @@
     container.addClass("filtered");
     // Setup the rows
     filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
+    parent = $(filtered.first()).parent();
     setupFiltered();
-    // Take note of parent element
-    parent = $(filtered[0]).parent();
     // Bind the custom render method
     container.bind("fl:render", render);
   }
