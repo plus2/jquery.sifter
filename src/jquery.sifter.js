@@ -9,7 +9,7 @@
     filterList: function(options) {
       opts = $.extend({}, $.fn.filterList.defaults, options);
       if (this.length) {
-        return this.each(setupFilters);
+        return this.each(setup);
       }
     }
   });
@@ -19,88 +19,86 @@
     groupedBy: 'ul',
     clearFiltersSelector: '.clear-filters',
     useHeadingTogglers: false,
-    headingSelector: 'h5 a'
+    headingSelector: 'h5 a',
+    filterTypeRegexp: /^(\w+)\-/
   };
   
-  function setupFilters () {
+  function setup () {
     // Container should be a UL with child LIs containing their own
     // UL with child LI filters
     container = $(this);
     // By default, there are no active filters
     container
       .data("activeFilters", [])
-      .addClass("isFilterList")
-      .bind("fl:activate fl:deactivate", updateActiveFilters); // Update what filters are active upon changes
+      .addClass("isFilterList");
     // Find the filter groups
     groups = container.find(opts.groupedBy);
     // Work on the filters themselves
-    filters = container.find(opts.selector);
-    filters.each(setupFilter);
+    filters = $(opts.selector + ':not(.ignore)', container);
+    setupFilters();
     // Set up clear filter link
-    $(opts.clearFiltersSelector).live("click keypress", clearFilters);
+    $(opts.clearFiltersSelector).live('click keypress', clearFilters);
+    // Update what filters are active upon changes
+    container.bind("fl:activate fl:deactivate", updateActiveFilters);
     // We may want to use the filter headings to toggle visibility
     setupHeadingTogglers();
   }
   
-  function setupFilter () {
-    var filter = $(this);
-    if (filter.hasClass('ignore') === false && filter.data('setup') !== true) {
-      // Called on an individual filter, which in the case of the
-      // image bank browse interface, is an anchor tag
-      filter.data("active", false);  // Inactive by default
-      // Trigger state change with mouse or keyboard
-      filter.bind("click keypress", function(e) {
+  function setupFilters () {
+    // Bind to the user's events and some custom ones too
+    filters.live('click keypress', function(e) {
+        var f = $(this);
+        f.trigger(f.hasClass('active') === true ? 'fl:deactivate' : 'fl:activate');
         e.preventDefault();
-        if ($(this).data("active") === true) {
-          $(this).trigger("fl:deactivate");
-        } else {
-          $(this).trigger("fl:activate");
-        }
-      });
-      // Bind to the custom events
-      // Using custom events instead of just putting this code in the toggle
-      filter
-        .bind("fl:activate", activateFilter)
-        .bind("fl:deactivate", deactivateFilter)
-        .data("setup", true); // Record that it has been set up
-    }
+      })
+      .live('fl:activate', activateFilter)
+      .live('fl:deactivate', deactivateFilter);
   }
   
   function updateActiveFilters () {
     // Find all active filters and store data about them on the container
-    var activeFilters = [];
-    groups.each(function(i) {
-      var grouped = [];
-      $(this).find(opts.selector).each(function() {
-        var el = $(this);
-        if (el.data('active') === true) {
-          grouped.push(el.attr('id'));
+    var activeFilters = filters.filter('.active'),
+        grouped = {},
+        active = [];
+    // Group by type into an object
+    activeFilters.each(function() {
+      var el = $(this),
+          id = el.attr('id'),
+          type;
+      if (id) {
+        type = id.match(opts.filterTypeRegexp);
+        if (type) {
+          if ($.isArray(grouped[type]) === false) {
+            grouped[type] = [];
+          }
+          grouped[type].push(id);
         }
-      });
-      if (grouped.length) {
-        activeFilters.push(grouped);
       }
     });
+    // Turn the above collection into an array of arrays
+    $.each(grouped, function(k, v) {
+      active.push(v);
+    });
     // Emit that this happened
-    container.trigger("fl:filtersUpdated", [activeFilters]);
+    container.trigger("fl:filtersUpdated", [active]);
   }
   
   function clearFilters () {
-    filters.each(deactivateFilter);
+    deactivateAll();
     updateActiveFilters();
     return false;
   }
   
+  function deactivateAll () {
+    filters.removeClass('active');
+  }
+  
   function deactivateFilter () {
-    $(this)
-      .data("active", false)
-      .removeClass("active");
+    $(this).removeClass('active');
   }
   
   function activateFilter () {
-    $(this)
-      .data("active", true)
-      .addClass("active");
+    $(this).addClass('active');
   }
   
   function setupHeadingTogglers () {
@@ -109,13 +107,13 @@
         var header = $(this);
         // The parent should be the parent of both the header and the filters in this category
         header.parent().parent()
-          .data("active", true)
-          .addClass("active");
+          .data('active', true)
+          .addClass('active');
         header.bind("click keypress", function() {
           var parent = header.parent().parent();
           parent
-            .toggleClass("active")
-            .data("active", !(parent.data("active") === true));
+            .toggleClass('active')
+            .data('active', !(parent.data('active') === true));
         });
       });
     }
@@ -171,14 +169,14 @@
   
   function activateItem () {
     $(this)
-      .data("active", true)
-      .addClass("active");
+      .data('active', true)
+      .addClass('active');
   }
   
   function deactivateItem () {
     $(this)
-      .data("active", false)
-      .removeClass("active");
+      .data('active', false)
+      .removeClass('active');
   }
   
   function render () {
