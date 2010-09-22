@@ -294,8 +294,8 @@
   function setup () {
     // Store some key elements
     container = $(this);
-    filteredList = $(opts.filteredList);
-    filterList = $(opts.filterList);
+    filteredList = container.find(opts.filteredList);
+    filterList = container.find(opts.filterList);
     // Set up the plugins
     // We're queueing these because it can get slow when dealing 
     // with a lot of data
