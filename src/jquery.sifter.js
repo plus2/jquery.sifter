@@ -47,14 +47,29 @@
     // Bind to the user's events and some custom ones too
     filters.live('click keypress', function(e) {
         var f = $(this);
-        f.trigger(f.hasClass('active') === true ? 'fl:deactivate' : 'fl:activate');
+        // Check if this is a standard filter or a radio
+        if (f.hasClass('radio') === true) {
+          // If this is a radio filter:
+          // - activate if inactive, and deactivate all others in the radio group
+          // - ignore if active
+          if (f.hasClass('active') === false) {
+            // Find the other active in this radio group and deactivate
+            // True here so we don't have 2 renders occurring, we'll just use the 2nd
+            f.parent().parent().find('.radio.active').trigger('fl:deactivate', true);
+            // Activate this one
+            f.trigger('fl:activate');
+          }
+        } else {
+          // If this is a standard filter, toggle between active and inactive
+          f.trigger(f.hasClass('active') === true ? 'fl:deactivate' : 'fl:activate');
+        }
         e.preventDefault();
       })
       .live('fl:activate', activateFilter)
       .live('fl:deactivate', deactivateFilter);
   }
   
-  function updateActiveFilters () {
+  function updateActiveFilters (e, noUpdate) {
     // Callback
     if ($.isFunction(opts.beforeUpdate)) {
       opts.beforeUpdate.apply(container);
@@ -82,8 +97,11 @@
     $.each(grouped, function(k, v) {
       active.push(v);
     });
-    // Emit that this happened
-    container.trigger("fl:filtersUpdated", [active]);
+    // Unless we've supplied event data requesting that this be ignored
+    if (noUpdate !== true) {
+      // Emit that this happened
+      container.trigger("fl:filtersUpdated", [active]);
+    }
   }
   
   function clearFilters () {
