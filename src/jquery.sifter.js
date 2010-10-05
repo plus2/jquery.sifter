@@ -111,7 +111,7 @@
   }
   
   function deactivateAll () {
-    filters.removeClass('active');
+    filters.filter(':not(.radio)').removeClass('active');
   }
   
   function deactivateFilter () {
@@ -157,7 +157,9 @@
       }
     },
     setActiveFilters: setActiveFilters,
-    hasContents: hasContents
+    getActiveFilters: getActive,
+    hasContents: hasContents,
+    cacheFiltered: cacheFiltered
   });
   
   $.fn.filteredList.defaults = {
@@ -174,7 +176,7 @@
     // Note that it's filtered
     container.addClass("filtered");
     // Setup the rows
-    filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
+    cacheFiltered();
     parent = $(filtered.first()).parent();
     setupFiltered();
     // Bind the custom render method
@@ -189,6 +191,10 @@
       // Visible by default, so let's make sure
       activateAll();
     }
+  }
+  
+  function cacheFiltered () {
+    filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
   }
   
   function activateAll () {
@@ -213,51 +219,51 @@
     $(this).removeClass('active');
   }
   
-  function getActive () {
-    return $.data(container, 'activeFilters');
-  }
-  
   function render () {
     // Expensive. Queue it.
     $(document)
       .queue('sifter', function() {
-        var active, rows, els;
+        var active, rows, els,
+            run_render = function() {
+              if (hasActiveFilters() === true) {
+                active = getActive(); // Fetch the active filters
+                detached = filtered.detach(); // Detach and make a copy of filtered
+                rows = detached;
+                // Loop through all filter groups. 'this' is an array of class names.
+                $.each(active, function() {
+                  var selector = '.' + this.join(',.'); // Selector for the filters
+                  rows = rows.filter(selector); // Reduce stored rows by selector
+                });
+                // Make rows unique and then activate those that remain
+                els = rows.get();
+                detached.each(function() {
+                  var el = $(this);
+                  if ($.inArray(this, els) >= 0) {
+                    if (el.hasClass('active') === false) {
+                      el.addClass('active');
+                    }
+                  } else {
+                    if (el.hasClass('active') === true) {
+                      el.removeClass('active');
+                    }
+                  }
+                });
+                // Add back into the dom
+                parent.append(detached);
+              } else {
+                // If no filters are set, we're going to ensure everything is active
+                activateAll();
+              }
+              // Run after callback
+              if ($.isFunction(opts.afterRender)) {
+                opts.afterRender.apply(container);
+              }
+            };
         // Run before callback
         if ($.isFunction(opts.beforeRender)) {
-          opts.beforeRender.apply(container);
-        }
-        if (hasActiveFilters() === true) {
-          active = getActive(); // Fetch the active filters
-          detached = filtered.detach(); // Detach and make a copy of filtered
-          rows = detached;
-          // Loop through all filter groups. 'this' is an array of class names.
-          $.each(active, function() {
-            var selector = '.' + this.join(',.'); // Selector for the filters
-            rows = rows.filter(selector); // Reduce stored rows by selector
-          });
-          // Make rows unique and then activate those that remain
-          els = rows.get();
-          detached.each(function() {
-            var el = $(this);
-            if ($.inArray(this, els) >= 0) {
-              if (el.hasClass('active') === false) {
-                el.addClass('active');
-              }
-            } else {
-              if (el.hasClass('active') === true) {
-                el.removeClass('active');
-              }
-            }
-          });
-          // Add back into the dom
-          parent.append(detached);
+          opts.beforeRender.apply(container, [run_render]);
         } else {
-          // If no filters are set, we're going to ensure everything is active
-          activateAll();
-        }
-        // Run after callback
-        if ($.isFunction(opts.afterRender)) {
-          opts.afterRender.apply(container);
+          run_render();
         }
         
         $(this).dequeue('sifter');
@@ -280,6 +286,10 @@
       $.data(container, 'activeFilters', filters);
       container.trigger("fl:render");
     }
+  }
+  
+  function getActive () {
+    return $.data(container, 'activeFilters');
   }
   
 }(jQuery));
