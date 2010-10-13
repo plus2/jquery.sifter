@@ -21,7 +21,8 @@
     useHeadingTogglers: false,
     headingSelector: 'h5 a',
     filterTypeRegexp: /^(\w+)\-/,
-    beforeUpdate: null
+    beforeUpdate: null,
+    afterClear: null
   };
   
   function setup () {
@@ -107,6 +108,9 @@
   function clearFilters () {
     deactivateAll();
     updateActiveFilters();
+    if ($.isFunction(opts.afterClear)) {
+      opts.afterClear.apply(container);
+    }
     return false;
   }
   
