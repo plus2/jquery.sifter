@@ -170,7 +170,8 @@
     filteredSelector: 'tbody > tr',
     afterRender: null,
     beforeRender: null,
-    activateOnSetup: true
+    activateOnSetup: true,
+    siblings: true
   };
   
   function setup () {
@@ -199,20 +200,43 @@
   
   function cacheFiltered () {
     filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
+    // If the filtered items aren't siblings, we're going to keep track of each one's parent
+    if (opts.siblings === false) {
+      filtered.each(function () {
+        var item = $(this);
+        // Find this item's parent and store a reference to it in data
+        item.data('parent', item.parent());
+      });
+    }
+  }
+
+  // Puts a collection of items back into the DOM
+  function putBack (collection) {
+    collection = collection || filtered; // If a collection isn't supplied, use filtered
+    // If the items are siblings, just chuck them in together under the parent
+    // Otherwise, each one needs to be placed under its original parent
+    if (opts.siblings === true) {
+      collection.appendTo(parent);
+    } else {
+      collection.each(function () {
+        var item = $(this);
+        item.data('parent').append(item);
+      });
+    }
   }
   
   function activateAll () {
     filtered
       .detach()
-      .addClass('active')
-      .appendTo(parent);
+      .addClass('active');
+    putBack();
   }
 
   function deactivateAll () {
     filtered
       .detach()
-      .removeClass('active')
-      .appendTo(parent);
+      .removeClass('active');
+    putBack();
   }
   
   function activateItem () {
@@ -253,7 +277,7 @@
                   }
                 });
                 // Add back into the dom
-                parent.append(detached);
+                putBack(detached);
               } else {
                 // If no filters are set, we're going to ensure everything is active
                 activateAll();
