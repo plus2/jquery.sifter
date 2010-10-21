@@ -11,7 +11,8 @@
       if (this.length) {
         return this.each(setup);
       }
-    }
+    },
+    updateActiveFilters: updateActiveFilters
   });
   
   $.fn.filterList.defaults = {
@@ -163,7 +164,8 @@
     setActiveFilters: setActiveFilters,
     getActiveFilters: getActive,
     hasContents: hasContents,
-    cacheFiltered: cacheFiltered
+    cacheFiltered: cacheFiltered,
+    setup: setup
   });
   
   $.fn.filteredList.defaults = {
@@ -251,7 +253,7 @@
     // Expensive. Queue it.
     $(document)
       .queue('sifter', function() {
-        var active, rows, els,
+        var active, detached, rows, els,
             run_render = function() {
               if (hasActiveFilters() === true) {
                 active = getActive(); // Fetch the active filters
