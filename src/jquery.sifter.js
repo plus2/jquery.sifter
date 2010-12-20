@@ -118,14 +118,16 @@
         }
       }
     });
+
     // Turn the above collection into an array of arrays
     $.each(grouped, function(k, v) {
       active.push(v);
     });
+
     // Unless we've supplied event data requesting that this be ignored
     if (noUpdate !== true) {
       // Emit that this happened
-      container.trigger("fl:filtersUpdated", [active]);
+      container.trigger("fl:filtersUpdated", [this, active]);
     }
   }
   
@@ -183,11 +185,13 @@
       return this.each(setup);
     },
     setActiveFilters: setActiveFilters,
+    setActiveFiltersFromSource: setActiveFiltersFromSource,
     getActiveFilters: getActive,
     hasContents: hasContents,
     cacheFiltered: cacheFiltered,
     setup: setup
   });
+
   
   $.fn.filteredList.defaults = {
     filteredSelector: 'tbody > tr',
@@ -197,11 +201,12 @@
     activateOnSetup: true,
     siblings: true
   };
+
   
   function setup () {
     container = $(this);  // This will probably be a table
     // Set this up
-    $.data(container, 'activeFilters', []);
+    $.data(container, 'activeFilters', {})
     // Note that it's filtered
     container.addClass("filtered");
     // Setup the rows
@@ -226,6 +231,7 @@
       activateAll();
     }
   }
+
   
   function cacheFiltered () {
     filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
@@ -238,6 +244,7 @@
       });
     }
   }
+
 
   // Puts a collection of items back into the DOM
   function putBack (collection) {
@@ -253,6 +260,7 @@
       });
     }
   }
+
   
   function activateAll () {
     filtered
@@ -261,20 +269,24 @@
     putBack();
   }
 
+
   function deactivateAll () {
     filtered
       .detach()
       .removeClass('active');
     putBack();
   }
+
   
   function activateItem () {
     $(this).addClass('active');
   }
+
   
   function deactivateItem () {
     $(this).removeClass('active');
   }
+
   
   function render () {
     // Expensive. Queue it.
@@ -286,11 +298,18 @@
                 active = getActive(); // Fetch the active filters
                 detached = filtered.detach(); // Detach and make a copy of filtered
                 rows = detached;
+
                 // Loop through all filter groups. 'this' is an array of class names.
                 $.each(active, function() {
-                  var selector = '.' + this.join(',.'); // Selector for the filters
-                  rows = rows.filter(selector); // Reduce stored rows by selector
+                  if ( $.isArray(this) ) {
+                    var selector = '.' + this.join(',.'); // Selector for the filters
+                    rows = rows.filter(selector); // Reduce stored rows by selector
+                  } else if ( $.isFunction(this) ) {
+                    rows = $( $.grep( rows.get(), this ) );
+                  }
                 });
+
+
                 // Make rows unique and then activate those that remain
                 els = rows.get();
                 detached.each(function() {
@@ -305,17 +324,22 @@
                     }
                   }
                 });
+
                 // Add back into the dom
                 putBack(detached);
+
               } else {
+
                 // If no filters are set, we're going to ensure everything is active
                 activateAll();
               }
+
               // Run after callback
               if ($.isFunction(opts.afterRender)) {
                 opts.afterRender.apply(container);
               }
             };
+
         // Run before callback
         if ($.isFunction(opts.beforeRender)) {
           opts.beforeRender.apply(container, [run_render]);
@@ -337,16 +361,47 @@
   function hasContents () {
     return filtered.length > 0;
   }
-  
+
   function setActiveFilters (filters) {
-    if ($.isArray(filters)) {
-      $.data(container, 'activeFilters', filters);
+    setActiveFiltersFromSource(filters,'*');
+  }
+
+  function setActiveFiltersFromSource (filters,source) {
+    filtersBySource = $.data(container, 'activeFilters') || {};
+
+    // valid filters get keyed by source. That is to say, a source only has one set of active filters.
+    if ($.isArray(filters) || $.isFunction(filters)) {
+      filtersBySource[source] = filters;
+
+      $.data(container, 'activeFilters', filtersBySource);
+      container.trigger("fl:render");
+
+    } else if (filters === null) {
+      delete filtersBySource[source]
+
+      $.data(container, 'activeFilters', filtersBySource);
       container.trigger("fl:render");
     }
   }
   
   function getActive () {
-    return $.data(container, 'activeFilters');
+    var filters = $.data(container, 'activeFilters'),
+        flatFilters = [];
+
+    // filters from all sources are merged into a single array.
+    if( $.isPlainObject(filters) ) {
+      $.each(filters,function(k,value) {
+        if ($.isArray(value)) {
+          $.merge(flatFilters,value);
+        } else {
+          flatFilters.push(value);
+        }
+      });
+
+      return flatFilters;
+    } else {
+      return [];
+    }
   }
   
 }(jQuery));
@@ -386,8 +441,10 @@
     // with a lot of data
     filteredList.filteredList(opts.filteredListOpts);
     filterList.filterList(opts.filterListOpts);
+
     // When we hear this event, we're going to work
     container.bind(opts.filterUpdateEvent, applyActiveFilters);
+
     // Trigger callback
     if ($.isFunction(opts.afterSetup)) {
       opts.afterSetup.apply(container);
@@ -395,13 +452,13 @@
   }
   
   // Move the active filter list filters to the filtered list
-  function applyActiveFilters (event, activeFilters) {
+  function applyActiveFilters (event, source, activeFilters) {
     // Make sure that we have results to filter
     if ($.isArray(activeFilters) && filteredList.hasContents() === true) {
       // Delay this too
       $(document)
         .queue('sifter', function() {
-          filteredList.setActiveFilters(activeFilters);
+          filteredList.setActiveFiltersFromSource(activeFilters,source);
           $(this).dequeue('sifter');
         })
         .dequeue('sifter');
