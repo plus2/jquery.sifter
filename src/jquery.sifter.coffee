@@ -343,22 +343,33 @@
       @setActiveFiltersFromSource(filters,'*')
 
 
-    setActiveFiltersFromSource: (filters,source) ->
+    setActiveFiltersFromSource: (filters, source) ->
+      # Make sure that we have results to filter
+      return unless $.isArray(filters) && @hasContents()
+
+      $(document)
+        .queue 'sifter', () =>
+          @immediatelySetActiveFiltersFromSource(filters, source)
+          $(document).dequeue('sifter')
+
+        .dequeue('sifter')
+
+
+    immediatelySetActiveFiltersFromSource: (filters,source) ->
       filtersBySource = $.data(@container, 'activeFilters') || {}
 
       # valid filters get keyed by source. That is to say, a source only has one set of active filters.
       if ($.isArray(filters) || $.isFunction(filters))
         filtersBySource[source] = filters
-
-        $.data(@container, 'activeFilters', filtersBySource)
-        @container.trigger("fl:render")
+        updated = true
 
       else if (filters == null)
         delete filtersBySource[source]
+        updated = true
 
+      if updated
         $.data(@container, 'activeFilters', filtersBySource)
         @container.trigger("fl:render")
-
 
 
     getActive: () ->
