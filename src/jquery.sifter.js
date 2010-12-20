@@ -55,7 +55,7 @@
     };
     FacetList.prototype.setupFilters = function() {
       return this.filters.live('click keypress', function(e) {
-        var _ref, f;
+        var f;
         f = $(this);
         if (f.hasClass('radio')) {
           if (!(f.hasClass('active'))) {
@@ -63,9 +63,7 @@
             f.trigger('fl:activate');
           }
         } else {
-          f.trigger((typeof (_ref = f.hasClass('active')) !== "undefined" && _ref !== null) ? _ref : {
-            'fl:deactivate': 'fl:activate'
-          });
+          f.trigger(f.hasClass('active') ? 'fl:deactivate' : 'fl:activate');
         }
         return e.preventDefault();
       }).live('fl:activate', this.activateFilter).live('fl:deactivate', this.deactivateFilter);

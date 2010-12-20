@@ -88,7 +88,7 @@
         else
 
           # If this is a standard filter, toggle between active and inactive
-          f.trigger f.hasClass('active') ? 'fl:deactivate' : 'fl:activate'
+          f.trigger if f.hasClass('active') then 'fl:deactivate' else 'fl:activate'
 
         e.preventDefault()
 
