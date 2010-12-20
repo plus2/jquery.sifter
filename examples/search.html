@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>jQuery.sifter: search</title>
+    <style>
+      #filterList .active {font-weight:bold}
+      #filteredList li {display:none}
+      #filteredList li.active {display:block}
+    </style>
+  </head>
+  <body>
+    <h1>Example</h1>
+    <h2>Search</h2>
+    <div>
+      <ul id="filterList">
+        <li>
+          <h3>Search</h3>
+          <input name="search">
+        <li>
+          <h3>Size</h3>
+          <ul>
+            <li><a href="#" id="size-big">Big</a></li>
+            <li><a href="#" id="size-medium">Medium</a></li>
+            <li><a href="#" id="size-small">Small</a></li>
+          </ul>
+        </li>
+        <li>
+          <h3>Type</h3>
+          <ul>
+            <li><a href="#" id="type-animate">Animate</a></li>
+            <li><a href="#" id="type-inanimate">Inanimate</a></li>
+          </ul>
+        </li>
+      </ul>
+      <a href="#" class="clear-filters">Clear filters</a>
+      <ul id="filteredList">
+        <li class="type-inanimate size-big">House</li>
+        <li class="type-inanimate size-medium">Car</li>
+        <li class="type-animate size-small">Mouse</li>
+        <li class="type-inanimate size-big">Ship</li>
+        <li class="type-animate size-medium">Cat</li>
+        <li class="type-animate size-small">Toadstool</li>
+        <li class="type-animate size-big">Blue Whale</li>
+        <li class="type-inanimate size-small">Button</li>
+      </ul>
+    </div>
+    <script src="../lib/jquery-1.4.2.min.js"></script>
+    <script src="../src/jquery.sifter.js"></script>
+    <script>
+      $(function() {
+        $('div').sifter({
+          filteredListOpts: {
+            filteredSelector: 'li'
+          }
+        });
+
+        $(':input[name=search]').bind('keyup change',function(e) {
+          e.preventDefault();
+          var term = $.trim($(this).val()).toLowerCase(),
+              filter;
+          if( $.trim(term) == '' ) {
+            filter = null;
+          } else {
+            filter = function(row,index) {
+              var text = $.trim($(row).text()).toLowerCase();
+              return text.indexOf(term) > -1;
+            }
+          }
+
+          $('#filteredList').setActiveFiltersFromSource(filter,this);
+          
+        });
+        
+      });
+    </script>
+  </body>
+</html>
