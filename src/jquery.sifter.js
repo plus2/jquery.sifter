@@ -416,9 +416,7 @@
   $.fn.extend({
     sifter: function(options) {
       opts = $.extend(true, {}, $.fn.sifter.defaults, options);
-      if (this.length) {
-        return this.each(setup);
-      }
+      return this.each(setup);
     }
   });
   
