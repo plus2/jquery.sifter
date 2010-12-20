@@ -4,19 +4,20 @@
 (($) ->
 
   $.fn.extend
-    facets: (opts) ->
-      # destroy existing instance
-      if instance = @data("facets")
-        @removeData("facets")
-
-      # selector is a form
+    facetList: (opts) ->
       return this.each () ->
         el = $(@)
-        instance = new Facets(el, opts)
-        el.data("facets", instance)
+        el.data("facetList", new FacetList(el, opts))
 
 
-  class Facets
+  callback = (name,args) ->
+    if $.isFunction(@opts[name])
+      args = slice.call(arguments, 2)
+      @opts[name].apply(@,args)
+
+
+  class FacetList
+    callback: callback
 
     defaults:
       selector: 'li a'
@@ -31,7 +32,7 @@
 
 
     $: (selector) ->
-      $(selector,@)
+      @container.find(selector)
 
 
     constructor: (el,opts) ->
@@ -48,10 +49,8 @@
       @groups = @container.find(@opts.groupedBy)
 
       # Work on the filters themselves
-      @filters = @$("#{@opts.selector} :not(.ignore)")
+      @filters = @$("#{@opts.selector}:not(.ignore)")
       @setupFilters()
-
-      _.bindAll @, 'clearFilters', 'updateActiveFilters'
 
       # Set up clear filter link
       $(@opts.clearFiltersSelector).live 'click keypress', @clearFilters
@@ -68,8 +67,11 @@
 
     setupFilters: () ->
       # Bind to the user's events and some custom ones too
-      filters.live 'click keypress', (e) ->
+      @filters.live 'click keypress', (e) ->
         f = $(@)
+
+        console.log "filter click", e, f
+
 
         # Check if this is a standard filter or a radio
         if f.hasClass('radio')
@@ -77,7 +79,7 @@
           # If this is a radio filter:
           # - activate if inactive, and deactivate all others in the radio group
           # - ignore if active
-          if f.hasClass('active')
+          unless f.hasClass('active')
 
             # Find the other active in this radio group and deactivate
             # True here so we don't have 2 renders occurring, we'll just use the 2nd
@@ -98,10 +100,11 @@
 
 
 
-    updateActiveFilters: (e, noUpdate) ->
+    updateActiveFilters: (e, noUpdate) =>
       # Callback
-      if $.isFunction(@opts.beforeUpdate)
-        @opts.beforeUpdate.apply(@)
+      @callback 'beforeUpdate'
+
+      console.log "updateActiveFilters"
 
       # Find all active filters and store data about them on the container
       activeFilters = @filters.filter('.active')
@@ -114,8 +117,7 @@
 
         if id = el.attr('id')
           if type = id.match(@opts.filterTypeRegexp)
-            unless $.isArray(grouped[type])
-              grouped[type] = []
+            grouped[type] = [] unless $.isArray(grouped[type])
 
             grouped[type].push(id)
 
@@ -126,14 +128,13 @@
       # Unless we've supplied event data requesting that this be ignored
       unless noUpdate
         # Emit that this happened
-        container.trigger "fl:filtersUpdated", [@, active]
+        @container.trigger "fl:filtersUpdated", [@, active]
 
 
-    clearFilters: () ->
+    clearFilters: () =>
       @deactivateAll()
       @updateActiveFilters()
-      if $.isFunction(@opts.afterClear)
-        @opts.afterClear.apply(@container)
+      @callback 'afterClear'
 
       false
 
@@ -152,7 +153,7 @@
 
     setupHeadingTogglers: () ->
       if @opts.useHeadingTogglers
-        @container.find(opts.headingSelector).each (el) =>
+        @container.find(@opts.headingSelector).each (el) =>
           header = $(el)
 
           # The parent should be the parent of both the header and the filters in this category
@@ -171,18 +172,13 @@
   # Filtered list plugin, used on results table
   $.fn.extend
     filteredList: (opts) ->
-      # destroy existing instance
-      if instance = @data("filteredList")
-        @removeData("filteredList")
-
-      # selector is a form
       return this.each () ->
         el = $(@)
-        instance = new FilteredList(el, opts)
-        el.data("filteredList", instance)
+        el.data("filteredList", new FilteredList(el, opts))
 
 
   class FilteredList
+    callback: callback
 
     defaults:
       filteredSelector: 'tbody > tr'
@@ -194,13 +190,11 @@
 
 
     constructor: (el,opts) ->
-      @opts = $.extend true, {}, @defaults, opts
-
-      @container = $(@)  # This will probably be a table
+      @opts      = $.extend true, {}, @defaults, opts
+      @container = $(el)  # This will probably be a table
 
       # Set this up
-      # XXX
-      $.data(container, 'activeFilters', {})
+      $.data(@container, 'activeFilters', {})
 
       # Note that it's filtered
       @container.addClass("filtered")
@@ -211,11 +205,9 @@
       @setupFiltered()
 
       # Bind the custom render method
-      _.bindAll @, 'render' # XXX bindAll
       @container.bind("fl:render", @render)
 
-      if $.isFunction(@opts.afterSetup)
-        @opts.afterSetup.apply(@)
+      @callback 'afterSetup'
 
 
     setupFiltered: () ->
@@ -254,14 +246,14 @@
 
 
     activateAll: () ->
-      filtered
+      @filtered
         .detach()
         .addClass('active')
       @putBack()
 
 
     deactivateAll: () ->
-      filtered
+      @filtered
         .detach()
         .removeClass('active')
       @putBack()
@@ -275,11 +267,12 @@
       $(@).removeClass('active')
 
 
-    render: () ->
+    render: () =>
+
       # Expensive. Queue it.
       $(document)
-        .queue 'sifter', () ->
-          run_render = () ->
+        .queue 'sifter', () =>
+          run_render = () =>
             if @hasActiveFilters()
               rows = detached = @filtered.detach() # Detach and make a copy of filtered
 
@@ -316,8 +309,7 @@
 
 
             # Run after callback
-            if $.isFunction(@opts.afterRender)
-              @opts.afterRender.apply(@)
+            @callback 'afterRender'
 
 
           # Run before callback
@@ -385,51 +377,60 @@
 
 # Sifter plugin, using both of the above plugins
 
-    #$.fn.extend
-      #sifter: (options) ->
-        #opts = $.extend(true, {}, $.fn.sifter.defaults, options)
-        #this.each(setup)
+  $.fn.extend
+    sifter: (opts) ->
+      return @each () ->
+        el = $(@)
+        el.data("sifter", new Sifter(el, opts))
 
   class Sifter
+    callback: callback
 
     defaults:
-      filterList: '#filterList'
+      facetList: '#facetList'
       filteredList: '#filteredList'
+
       filterUpdateEvent: 'fl:filtersUpdated'
-      filterListOpts: {}
+
+      facetListOpts: {}
       filteredListOpts: {}
+
       afterSetup: null
 
 
-    constructor: () ->
+    constructor: (el,opts) ->
+      @opts = $.extend true, {}, @defaults, opts
+
       # Store some key elements
-      container = $(@)
-      filteredList = container.find(opts.filteredList)
-      filterList = container.find(opts.filterList)
+      @container = $(el)
+
+      @filteredList = @container.find(@opts.filteredList)
+      @facetList    = @container.find(@opts.facetList)
 
       # Set up the plugins
       # We're queueing these because it can get slow when dealing 
       # with a lot of data
-      filteredList.filteredList(opts.filteredListOpts)
-      filterList.filterList(opts.filterListOpts)
+      @filteredList.filteredList(@opts.filteredListOpts)
+      @facetList.facetList(@opts.facetListOpts)
 
       # When we hear this event, we're going to work
-      container.bind(opts.filterUpdateEvent, applyActiveFilters)
+      @container.bind(@opts.filterUpdateEvent, @applyActiveFilters)
 
       # Trigger callback
-      if ($.isFunction(opts.afterSetup))
-        opts.afterSetup.apply(container)
+      @callback 'afterSetup'
 
 
     # Move the active filter list filters to the filtered list
-    applyActiveFilters: (event, source, activeFilters) ->
+    applyActiveFilters: (event, source, activeFilters) =>
       # Make sure that we have results to filter
-      if ($.isArray(activeFilters) && filteredList.hasContents() == true)
+      fl = @filteredList.data('filteredList')
+      if $.isArray(activeFilters) && fl.hasContents()
         # Delay this too
         $(document)
-          .queue 'sifter', () ->
-            filteredList.setActiveFiltersFromSource(activeFilters,source)
-            $(@).dequeue('sifter')
+          .queue 'sifter', () =>
+            console.log "setting up filters"
+            fl.setActiveFiltersFromSource(activeFilters, source)
+            $(document).dequeue('sifter')
 
           .dequeue('sifter')
 

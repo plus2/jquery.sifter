@@ -3,29 +3,33 @@
     return function(){ return func.apply(context, arguments); };
   };
   (function($) {
-    var Facets, FilteredList, Sifter;
+    var FacetList, FilteredList, Sifter, callback;
     $.fn.extend({
-      facets: function(opts) {
-        var instance;
-        if (instance = this.data("facets")) {
-          this.removeData("facets");
-        }
+      facetList: function(opts) {
         return this.each(function() {
           var el;
           el = $(this);
-          instance = new Facets(el, opts);
-          return el.data("facets", instance);
+          return el.data("facetList", new FacetList(el, opts));
         });
       }
     });
-    Facets = function(el, opts) {
+    callback = function(name, args) {
+      if ($.isFunction(this.opts[name])) {
+        args = slice.call(arguments, 2);
+        return this.opts[name].apply(this, args);
+      }
+    };
+    FacetList = function(el, opts) {
+      var _a;
+      _a = this;
+      this.clearFilters = function(){ return FacetList.prototype.clearFilters.apply(_a, arguments); };
+      this.updateActiveFilters = function(){ return FacetList.prototype.updateActiveFilters.apply(_a, arguments); };
       this.opts = $.extend(true, {}, this.defaults, opts);
       this.container = $(el);
       this.container.addClass("isFilterList");
       this.groups = this.container.find(this.opts.groupedBy);
-      this.filters = this.$("" + (this.opts.selector) + " :not(.ignore)");
+      this.filters = this.$("" + (this.opts.selector) + ":not(.ignore)");
       this.setupFilters();
-      _.bindAll(this, 'clearFilters', 'updateActiveFilters');
       $(this.opts.clearFiltersSelector).live('click keypress', this.clearFilters);
       this.container.bind("fl:activate fl:deactivate", this.updateActiveFilters);
       this.setupHeadingTogglers();
@@ -34,7 +38,8 @@
       }
       return this;
     };
-    Facets.prototype.defaults = {
+    FacetList.prototype.callback = callback;
+    FacetList.prototype.defaults = {
       selector: 'li a',
       groupedBy: 'ul',
       clearFiltersSelector: '.clear-filters',
@@ -45,15 +50,16 @@
       afterSetup: null,
       afterClear: null
     };
-    Facets.prototype.$ = function(selector) {
-      return $(selector, this);
+    FacetList.prototype.$ = function(selector) {
+      return this.container.find(selector);
     };
-    Facets.prototype.setupFilters = function() {
-      return filters.live('click keypress', function(e) {
+    FacetList.prototype.setupFilters = function() {
+      return this.filters.live('click keypress', function(e) {
         var _a, f;
         f = $(this);
+        console.log("filter click", e, f);
         if (f.hasClass('radio')) {
-          if (f.hasClass('active')) {
+          if (!(f.hasClass('active'))) {
             f.parent().parent().find('.radio.active').trigger('fl:deactivate', true);
             f.trigger('fl:activate');
           }
@@ -65,11 +71,10 @@
         return e.preventDefault();
       }).live('fl:activate', this.activateFilter).live('fl:deactivate', this.deactivateFilter);
     };
-    Facets.prototype.updateActiveFilters = function(e, noUpdate) {
+    FacetList.prototype.updateActiveFilters = function(e, noUpdate) {
       var active, activeFilters, grouped;
-      if ($.isFunction(this.opts.beforeUpdate)) {
-        this.opts.beforeUpdate.apply(this);
-      }
+      this.callback('beforeUpdate');
+      console.log("updateActiveFilters");
       activeFilters = this.filters.filter('.active');
       grouped = {};
       active = [];
@@ -88,27 +93,25 @@
       $.each(grouped, function(k, v) {
         return active.push(v);
       });
-      return !(noUpdate) ? container.trigger("fl:filtersUpdated", [this, active]) : null;
+      return !(noUpdate) ? this.container.trigger("fl:filtersUpdated", [this, active]) : null;
     };
-    Facets.prototype.clearFilters = function() {
+    FacetList.prototype.clearFilters = function() {
       this.deactivateAll();
       this.updateActiveFilters();
-      if ($.isFunction(this.opts.afterClear)) {
-        this.opts.afterClear.apply(this.container);
-      }
+      this.callback('afterClear');
       return false;
     };
-    Facets.prototype.deactivateAll = function() {
+    FacetList.prototype.deactivateAll = function() {
       return this.filters.filter(':not(.radio)').removeClass('active');
     };
-    Facets.prototype.deactivateFilter = function() {
+    FacetList.prototype.deactivateFilter = function() {
       return $(this).removeClass('active');
     };
-    Facets.prototype.activateFilter = function() {
+    FacetList.prototype.activateFilter = function() {
       return $(this).addClass('active');
     };
-    Facets.prototype.setupHeadingTogglers = function() {
-      return this.opts.useHeadingTogglers ? this.container.find(opts.headingSelector).each(__bind(function(el) {
+    FacetList.prototype.setupHeadingTogglers = function() {
+      return this.opts.useHeadingTogglers ? this.container.find(this.opts.headingSelector).each(__bind(function(el) {
         var header;
         header = $(el);
         header.parent().parent().data('active', true).addClass('active');
@@ -121,33 +124,29 @@
     };
     $.fn.extend({
       filteredList: function(opts) {
-        var instance;
-        if (instance = this.data("filteredList")) {
-          this.removeData("filteredList");
-        }
         return this.each(function() {
           var el;
           el = $(this);
-          instance = new FilteredList(el, opts);
-          return el.data("filteredList", instance);
+          return el.data("filteredList", new FilteredList(el, opts));
         });
       }
     });
     FilteredList = function(el, opts) {
+      var _a;
+      _a = this;
+      this.render = function(){ return FilteredList.prototype.render.apply(_a, arguments); };
       this.opts = $.extend(true, {}, this.defaults, opts);
-      this.container = $(this);
-      $.data(container, 'activeFilters', {});
+      this.container = $(el);
+      $.data(this.container, 'activeFilters', {});
       this.container.addClass("filtered");
       this.cacheFiltered();
       this.parent = $(this.filtered.first()).parent();
       this.setupFiltered();
-      _.bindAll(this, 'render');
       this.container.bind("fl:render", this.render);
-      if ($.isFunction(this.opts.afterSetup)) {
-        this.opts.afterSetup.apply(this);
-      }
+      this.callback('afterSetup');
       return this;
     };
+    FilteredList.prototype.callback = callback;
     FilteredList.prototype.defaults = {
       filteredSelector: 'tbody > tr',
       afterSetup: null,
@@ -177,11 +176,11 @@
       });
     };
     FilteredList.prototype.activateAll = function() {
-      filtered.detach().addClass('active');
+      this.filtered.detach().addClass('active');
       return this.putBack();
     };
     FilteredList.prototype.deactivateAll = function() {
-      filtered.detach().removeClass('active');
+      this.filtered.detach().removeClass('active');
       return this.putBack();
     };
     FilteredList.prototype.activateItem = function() {
@@ -191,9 +190,9 @@
       return $(this).removeClass('active');
     };
     FilteredList.prototype.render = function() {
-      return $(document).queue('sifter', function() {
+      return $(document).queue('sifter', __bind(function() {
         var run_render;
-        run_render = function() {
+        run_render = __bind(function() {
           var detached, els, rows;
           if (this.hasActiveFilters()) {
             rows = (detached = this.filtered.detach());
@@ -216,15 +215,15 @@
           } else {
             this.activateAll();
           }
-          return $.isFunction(this.opts.afterRender) ? this.opts.afterRender.apply(this) : null;
-        };
+          return this.callback('afterRender');
+        }, this);
         if ($.isFunction(this.opts.beforeRender)) {
           this.opts.beforeRender.apply(this, [run_render]);
         } else {
           run_render();
         }
         return $(this).dequeue('sifter');
-      }).delay(100, 'sifter').dequeue('sifter');
+      }, this)).delay(100, 'sifter').dequeue('sifter');
     };
     FilteredList.prototype.hasActiveFilters = function() {
       var active;
@@ -263,32 +262,46 @@
         return [];
       }
     };
-    Sifter = function() {
-      var container, filterList, filteredList;
-      container = $(this);
-      filteredList = container.find(opts.filteredList);
-      filterList = container.find(opts.filterList);
-      filteredList.filteredList(opts.filteredListOpts);
-      filterList.filterList(opts.filterListOpts);
-      container.bind(opts.filterUpdateEvent, applyActiveFilters);
-      if ($.isFunction(opts.afterSetup)) {
-        opts.afterSetup.apply(container);
+    $.fn.extend({
+      sifter: function(opts) {
+        return this.each(function() {
+          var el;
+          el = $(this);
+          return el.data("sifter", new Sifter(el, opts));
+        });
       }
+    });
+    Sifter = function(el, opts) {
+      var _a;
+      _a = this;
+      this.applyActiveFilters = function(){ return Sifter.prototype.applyActiveFilters.apply(_a, arguments); };
+      this.opts = $.extend(true, {}, this.defaults, opts);
+      this.container = $(el);
+      this.filteredList = this.container.find(this.opts.filteredList);
+      this.facetList = this.container.find(this.opts.facetList);
+      this.filteredList.filteredList(this.opts.filteredListOpts);
+      this.facetList.facetList(this.opts.facetListOpts);
+      this.container.bind(this.opts.filterUpdateEvent, this.applyActiveFilters);
+      this.callback('afterSetup');
       return this;
     };
+    Sifter.prototype.callback = callback;
     Sifter.prototype.defaults = {
-      filterList: '#filterList',
+      facetList: '#facetList',
       filteredList: '#filteredList',
       filterUpdateEvent: 'fl:filtersUpdated',
-      filterListOpts: {},
+      facetListOpts: {},
       filteredListOpts: {},
       afterSetup: null
     };
     Sifter.prototype.applyActiveFilters = function(event, source, activeFilters) {
-      return ($.isArray(activeFilters) && filteredList.hasContents() === true) ? $(document).queue('sifter', function() {
-        filteredList.setActiveFiltersFromSource(activeFilters, source);
-        return $(this).dequeue('sifter');
-      }).dequeue('sifter') : null;
+      var fl;
+      fl = this.filteredList.data('filteredList');
+      return $.isArray(activeFilters) && fl.hasContents() ? $(document).queue('sifter', __bind(function() {
+        console.log("setting up filters");
+        fl.setActiveFiltersFromSource(activeFilters, source);
+        return $(document).dequeue('sifter');
+      }, this)).dequeue('sifter') : null;
     };
     return Sifter;
   })(jQuery);
