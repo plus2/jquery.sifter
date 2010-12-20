@@ -24,45 +24,64 @@
     headingSelector: 'h5 a',
     filterTypeRegexp: /^(\w+)\-/,
     beforeUpdate: null,
+    afterSetup: null,
     afterClear: null
   };
   
+
   function setup () {
     // Container should be a UL with child LIs containing their own
     // UL with child LI filters
     container = $(this);
+
     // Note that it's setup
     container.addClass("isFilterList");
+
     // Find the filter groups
     groups = container.find(opts.groupedBy);
+
     // Work on the filters themselves
     filters = $(opts.selector + ':not(.ignore)', container);
     setupFilters();
+
     // Set up clear filter link
     $(opts.clearFiltersSelector).live('click keypress', clearFilters);
+
     // Update what filters are active upon changes
     container.bind("fl:activate fl:deactivate", updateActiveFilters);
+
     // We may want to use the filter headings to toggle visibility
     setupHeadingTogglers();
+
+    if ($.isFunction(opts.afterSetup)) {
+      opts.afterSetup.apply(container);
+    }
+
   }
+
   
   function setupFilters () {
     // Bind to the user's events and some custom ones too
     filters.live('click keypress', function(e) {
         var f = $(this);
+
         // Check if this is a standard filter or a radio
         if (f.hasClass('radio') === true) {
+
           // If this is a radio filter:
           // - activate if inactive, and deactivate all others in the radio group
           // - ignore if active
           if (f.hasClass('active') === false) {
+
             // Find the other active in this radio group and deactivate
             // True here so we don't have 2 renders occurring, we'll just use the 2nd
             f.parent().parent().find('.radio.active').trigger('fl:deactivate', true);
+
             // Activate this one
             f.trigger('fl:activate');
           }
         } else {
+
           // If this is a standard filter, toggle between active and inactive
           f.trigger(f.hasClass('active') === true ? 'fl:deactivate' : 'fl:activate');
         }
@@ -71,16 +90,19 @@
       .live('fl:activate', activateFilter)
       .live('fl:deactivate', deactivateFilter);
   }
+
   
   function updateActiveFilters (e, noUpdate) {
     // Callback
     if ($.isFunction(opts.beforeUpdate)) {
       opts.beforeUpdate.apply(container);
     }
+
     // Find all active filters and store data about them on the container
     var activeFilters = filters.filter('.active'),
         grouped = {},
         active = [];
+
     // Group by type into an object
     activeFilters.each(function() {
       var el = $(this),
@@ -169,6 +191,7 @@
   
   $.fn.filteredList.defaults = {
     filteredSelector: 'tbody > tr',
+    afterSetup: null,
     afterRender: null,
     beforeRender: null,
     activateOnSetup: true,
@@ -187,7 +210,12 @@
     setupFiltered();
     // Bind the custom render method
     container.bind("fl:render", render);
+
+    if ($.isFunction(opts.afterSetup)) {
+      opts.afterSetup.apply(container);
+    }
   }
+
   
   function setupFiltered () {
     filtered
