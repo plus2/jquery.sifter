@@ -20,10 +20,10 @@
       }
     };
     FacetList = function(el, opts) {
-      var _a;
-      _a = this;
-      this.clearFilters = function(){ return FacetList.prototype.clearFilters.apply(_a, arguments); };
-      this.updateActiveFilters = function(){ return FacetList.prototype.updateActiveFilters.apply(_a, arguments); };
+      var _this;
+      _this = this;
+      this.clearFilters = function(){ return FacetList.prototype.clearFilters.apply(_this, arguments); };
+      this.updateActiveFilters = function(){ return FacetList.prototype.updateActiveFilters.apply(_this, arguments); };
       this.opts = $.extend(true, {}, this.defaults, opts);
       this.container = $(el);
       this.container.addClass("isFilterList");
@@ -55,16 +55,15 @@
     };
     FacetList.prototype.setupFilters = function() {
       return this.filters.live('click keypress', function(e) {
-        var _a, f;
+        var _ref, f;
         f = $(this);
-        console.log("filter click", e, f);
         if (f.hasClass('radio')) {
           if (!(f.hasClass('active'))) {
             f.parent().parent().find('.radio.active').trigger('fl:deactivate', true);
             f.trigger('fl:activate');
           }
         } else {
-          f.trigger((typeof (_a = f.hasClass('active')) !== "undefined" && _a !== null) ? _a : {
+          f.trigger((typeof (_ref = f.hasClass('active')) !== "undefined" && _ref !== null) ? _ref : {
             'fl:deactivate': 'fl:activate'
           });
         }
@@ -74,11 +73,10 @@
     FacetList.prototype.updateActiveFilters = function(e, noUpdate) {
       var active, activeFilters, grouped;
       this.callback('beforeUpdate');
-      console.log("updateActiveFilters");
       activeFilters = this.filters.filter('.active');
       grouped = {};
       active = [];
-      activeFilters.each(__bind(function(el) {
+      activeFilters.each(__bind(function(i, el) {
         var id, type;
         el = $(el);
         if (id = el.attr('id')) {
@@ -107,7 +105,7 @@
     FacetList.prototype.deactivateFilter = function() {
       return $(this).removeClass('active');
     };
-    FacetList.prototype.activateFilter = function() {
+    FacetList.prototype.activateFilter = function(e) {
       return $(this).addClass('active');
     };
     FacetList.prototype.setupHeadingTogglers = function() {
@@ -132,9 +130,9 @@
       }
     });
     FilteredList = function(el, opts) {
-      var _a;
-      _a = this;
-      this.render = function(){ return FilteredList.prototype.render.apply(_a, arguments); };
+      var _this;
+      _this = this;
+      this.render = function(){ return FilteredList.prototype.render.apply(_this, arguments); };
       this.opts = $.extend(true, {}, this.defaults, opts);
       this.container = $(el);
       $.data(this.container, 'activeFilters', {});
@@ -272,9 +270,9 @@
       }
     });
     Sifter = function(el, opts) {
-      var _a;
-      _a = this;
-      this.applyActiveFilters = function(){ return Sifter.prototype.applyActiveFilters.apply(_a, arguments); };
+      var _this;
+      _this = this;
+      this.applyActiveFilters = function(){ return Sifter.prototype.applyActiveFilters.apply(_this, arguments); };
       this.opts = $.extend(true, {}, this.defaults, opts);
       this.container = $(el);
       this.filteredList = this.container.find(this.opts.filteredList);
@@ -298,11 +296,10 @@
       var fl;
       fl = this.filteredList.data('filteredList');
       return $.isArray(activeFilters) && fl.hasContents() ? $(document).queue('sifter', __bind(function() {
-        console.log("setting up filters");
         fl.setActiveFiltersFromSource(activeFilters, source);
         return $(document).dequeue('sifter');
       }, this)).dequeue('sifter') : null;
     };
     return Sifter;
   })(jQuery);
-})();
+}).call(this);

@@ -70,9 +70,6 @@
       @filters.live 'click keypress', (e) ->
         f = $(@)
 
-        console.log "filter click", e, f
-
-
         # Check if this is a standard filter or a radio
         if f.hasClass('radio')
 
@@ -104,15 +101,13 @@
       # Callback
       @callback 'beforeUpdate'
 
-      console.log "updateActiveFilters"
-
       # Find all active filters and store data about them on the container
       activeFilters = @filters.filter('.active')
       grouped = {}
       active = []
 
       # Group by type into an object
-      activeFilters.each (el) =>
+      activeFilters.each (i,el) =>
         el = $(el)
 
         if id = el.attr('id')
@@ -147,7 +142,7 @@
       $(@).removeClass('active')
 
 
-    activateFilter: () ->
+    activateFilter: (e) ->
       $(@).addClass('active')
 
 
@@ -428,7 +423,6 @@
         # Delay this too
         $(document)
           .queue 'sifter', () =>
-            console.log "setting up filters"
             fl.setActiveFiltersFromSource(activeFilters, source)
             $(document).dequeue('sifter')
 
