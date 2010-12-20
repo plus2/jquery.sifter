@@ -3,13 +3,8 @@
 
 (($) ->
 
-  $.fn.extend
-    facetList: (opts) ->
-      return this.each () ->
-        el = $(@)
-        el.data("facetList", new FacetList(el, opts))
-
-
+  ## Helpers
+  # simple callback helper, DRYs up a few lines
   callback = (name,args) ->
     fn = if $.isFunction(name)
           name
@@ -19,6 +14,16 @@
     if fn
       args = slice.call(arguments, 2)
       fn.apply(@,args)
+
+
+  ## FacetList
+
+  # add it to the jQuery namespace
+  $.fn.extend
+    facetList: (opts) ->
+      return this.each () ->
+        el = $(@)
+        el.data("facetList", new FacetList(el, opts))
 
 
   class FacetList
@@ -73,6 +78,7 @@
     setupFilters: () ->
       # Bind to the user's events and some custom ones too
       @filters.live 'click keypress', (e) ->
+
         f = $(@)
 
         # Check if this is a standard filter or a radio
