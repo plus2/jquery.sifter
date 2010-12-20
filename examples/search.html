@@ -55,22 +55,27 @@
           }
         });
 
-        $(':input[name=search]').bind('keyup change',function(e) {
+        filteredList = $('#filteredList').data('filteredList')
+
+        $('#facetList :input[name=search]').bind('keyup change', function(e) {
           e.preventDefault();
+
           var term = $.trim($(this).val()).toLowerCase(),
               filter;
-          if( $.trim(term) == '' ) {
+
+          if( term == '' ) {
             filter = null;
           } else {
             filter = function(row,index) {
               var text = $.trim($(row).text()).toLowerCase();
+              console.log( "filtering for", text, "vs", term)
               return text.indexOf(term) > -1;
             }
           }
 
-          $('#filteredList').setActiveFiltersFromSource(filter,this);
+          filteredList.setActiveFiltersFromSource(filter,this);
           
-        });
+        }); // bind keyup change
         
       });
     </script>

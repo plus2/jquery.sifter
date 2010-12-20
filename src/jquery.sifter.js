@@ -240,8 +240,11 @@
     FilteredList.prototype.setActiveFilters = function(filters) {
       return this.setActiveFiltersFromSource(filters, '*');
     };
+    FilteredList.prototype.isValidFilter = function(filter) {
+      return $.isArray(filter) || $.isFunction(filter);
+    };
     FilteredList.prototype.setActiveFiltersFromSource = function(filters, source) {
-      if (!($.isArray(filters) && this.hasContents())) {
+      if (!(this.isValidFilter(filters) && this.hasContents())) {
         return null;
       }
       return $(document).queue('sifter', __bind(function() {
@@ -252,7 +255,7 @@
     FilteredList.prototype.immediatelySetActiveFiltersFromSource = function(filters, source) {
       var filtersBySource, updated;
       filtersBySource = $.data(this.container, 'activeFilters') || {};
-      if ($.isArray(filters) || $.isFunction(filters)) {
+      if (this.isValidFilter(filters)) {
         filtersBySource[source] = filters;
         updated = true;
       } else if (filters === null) {
