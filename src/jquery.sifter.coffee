@@ -11,9 +11,14 @@
 
 
   callback = (name,args) ->
-    if $.isFunction(@opts[name])
+    fn = if $.isFunction(name)
+          name
+         else if $.isFunction(@opts[name])
+           @opts[name]
+
+    if fn
       args = slice.call(arguments, 2)
-      @opts[name].apply(@,args)
+      fn.apply(@,args)
 
 
   class FacetList
@@ -376,12 +381,13 @@
     sifter: (opts) ->
       return @each () ->
         el = $(@)
-        el.data("sifter", new Sifter(el, opts))
+        el.data("sifter", new SifterClassic(el, opts))
+
 
   class Sifter
     callback: callback
 
-    defaults:
+    @defaults:
       facetList: '#facetList'
       filteredList: '#filteredList'
 
@@ -394,25 +400,44 @@
 
 
     constructor: (el,opts) ->
-      @opts = $.extend true, {}, @defaults, opts
+      @opts = $.extend true, {}, Sifter.defaults, opts
 
       # Store some key elements
       @container = $(el)
 
       @filteredList = @container.find(@opts.filteredList)
-      @facetList    = @container.find(@opts.facetList)
 
       # Set up the plugins
       # We're queueing these because it can get slow when dealing 
       # with a lot of data
       @filteredList.filteredList(@opts.filteredListOpts)
+
+      # Trigger callback
+      @callback 'afterSetup'
+
+
+  class SifterClassic extends Sifter
+
+    @defaults:
+      facetList: '#filterList'
+
+    constructor: (el,opts) ->
+      @opts = $.extend true, {}, SifterClassic.defaults, opts
+
+      # delay afterSetup until after this outer constructor
+      setupCallback    = opts.afterSetup
+      opts.afterSetup = null
+
+      super(el,@opts)
+
+      @facetList    = @container.find(@opts.facetList)
       @facetList.facetList(@opts.facetListOpts)
 
       # When we hear this event, we're going to work
       @container.bind(@opts.filterUpdateEvent, @applyActiveFilters)
 
-      # Trigger callback
-      @callback 'afterSetup'
+      @callback setupCallback
+
 
 
     # Move the active filter list filters to the filtered list
