@@ -392,7 +392,8 @@
 
 
 
-# Sifter plugin, using both of the above plugins
+  ## Sifter
+  # Sifter plugin, using both of the above plugins
 
   $.fn.extend
     sifter: (opts) ->
