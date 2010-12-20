@@ -3,17 +3,18 @@
 //
 (function($) {
   
+
   var opts, container, groups, filters;
   
+
   $.fn.extend({
     filterList: function(options) {
       opts = $.extend({}, $.fn.filterList.defaults, options);
-      if (this.length) {
-        return this.each(setup);
-      }
+      return this.each(setup);
     },
     updateActiveFilters: updateActiveFilters
   });
+
   
   $.fn.filterList.defaults = {
     selector: 'li a',
@@ -157,9 +158,7 @@
   $.fn.extend({
     filteredList: function(options) {
       opts = $.extend({}, $.fn.filteredList.defaults, options);
-      if (this.length) {
-        return this.each(setup);
-      }
+      return this.each(setup);
     },
     setActiveFilters: setActiveFilters,
     getActiveFilters: getActive,
