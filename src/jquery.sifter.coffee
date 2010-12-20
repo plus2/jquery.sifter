@@ -398,11 +398,12 @@
     sifter: (opts) ->
       return @each () ->
         el = $(@)
-        el.data("sifter", new SifterClassic(el, opts))
+        el.data("sifter", new Sifter(el, opts))
 
 
   class Sifter
     callback: callback
+
 
     @defaults:
       facetList: '#facetList'
@@ -422,52 +423,28 @@
       # Store some key elements
       @container = $(el)
 
-      @filteredList = @container.find(@opts.filteredList)
+      @filteredListEl = @container.find(@opts.filteredList)
 
       # Set up the plugins
-      # We're queueing these because it can get slow when dealing 
-      # with a lot of data
-      @filteredList.filteredList(@opts.filteredListOpts)
+      @filteredListEl.filteredList(@opts.filteredListOpts)
+      @filteredList = @filteredListEl.data('filteredList')
+
+      @facetListEl    = @container.find(@opts.facetList)
+      @facetListEl.facetList(@opts.facetListOpts)
+      @facetList = @facetListEl.data('facetList')
+
+      # When we hear this event, we're going to work
+      @container.bind(@opts.filterUpdateEvent, @applyActiveFilters)
 
       # Trigger callback
       @callback 'afterSetup'
 
 
-  class SifterClassic extends Sifter
-
-    @defaults:
-      facetList: '#filterList'
-
-    constructor: (el,opts) ->
-      @opts = $.extend true, {}, SifterClassic.defaults, opts
-
-      # delay afterSetup until after this outer constructor
-      setupCallback    = opts.afterSetup
-      opts.afterSetup = null
-
-      super(el,@opts)
-
-      @facetList    = @container.find(@opts.facetList)
-      @facetList.facetList(@opts.facetListOpts)
-
-      # When we hear this event, we're going to work
-      @container.bind(@opts.filterUpdateEvent, @applyActiveFilters)
-
-      @callback setupCallback
-
-
-
     # Move the active filter list filters to the filtered list
+    # We're queueing this because it can get slow when dealing 
+    # with a lot of data
     applyActiveFilters: (event, source, activeFilters) =>
-      # Make sure that we have results to filter
-      fl = @filteredList.data('filteredList')
-      if $.isArray(activeFilters) && fl.hasContents()
-        # Delay this too
-        $(document)
-          .queue 'sifter', () =>
-            fl.setActiveFiltersFromSource(activeFilters, source)
-            $(document).dequeue('sifter')
+      @filteredList.setActiveFiltersFromSource(activeFilters, source)
 
-          .dequeue('sifter')
 
 )(jQuery)
