@@ -343,9 +343,13 @@
       @setActiveFiltersFromSource(filters,'*')
 
 
+    isValidFilter: (filter) ->
+      $.isArray(filter) || $.isFunction(filter)
+
+
     setActiveFiltersFromSource: (filters, source) ->
       # Make sure that we have results to filter
-      return unless $.isArray(filters) && @hasContents()
+      return unless @isValidFilter(filters) && @hasContents()
 
       $(document)
         .queue 'sifter', () =>
@@ -359,11 +363,11 @@
       filtersBySource = $.data(@container, 'activeFilters') || {}
 
       # valid filters get keyed by source. That is to say, a source only has one set of active filters.
-      if ($.isArray(filters) || $.isFunction(filters))
+      if @isValidFilter(filters)
         filtersBySource[source] = filters
         updated = true
 
-      else if (filters == null)
+      else if filters == null
         delete filtersBySource[source]
         updated = true
 
