@@ -1,466 +1,295 @@
-//
-// Filter list plugin, used for the facets
-//
-(function($) {
-  
-
-  var opts, container, groups, filters;
-  
-
-  $.fn.extend({
-    filterList: function(options) {
-      opts = $.extend({}, $.fn.filterList.defaults, options);
-      return this.each(setup);
-    },
-    updateActiveFilters: updateActiveFilters
-  });
-
-  
-  $.fn.filterList.defaults = {
-    selector: 'li a',
-    groupedBy: 'ul',
-    clearFiltersSelector: '.clear-filters',
-    useHeadingTogglers: false,
-    headingSelector: 'h5 a',
-    filterTypeRegexp: /^(\w+)\-/,
-    beforeUpdate: null,
-    afterSetup: null,
-    afterClear: null
+(function() {
+  var __bind = function(func, context) {
+    return function(){ return func.apply(context, arguments); };
   };
-  
-
-  function setup () {
-    // Container should be a UL with child LIs containing their own
-    // UL with child LI filters
-    container = $(this);
-
-    // Note that it's setup
-    container.addClass("isFilterList");
-
-    // Find the filter groups
-    groups = container.find(opts.groupedBy);
-
-    // Work on the filters themselves
-    filters = $(opts.selector + ':not(.ignore)', container);
-    setupFilters();
-
-    // Set up clear filter link
-    $(opts.clearFiltersSelector).live('click keypress', clearFilters);
-
-    // Update what filters are active upon changes
-    container.bind("fl:activate fl:deactivate", updateActiveFilters);
-
-    // We may want to use the filter headings to toggle visibility
-    setupHeadingTogglers();
-
-    if ($.isFunction(opts.afterSetup)) {
-      opts.afterSetup.apply(container);
-    }
-
-  }
-
-  
-  function setupFilters () {
-    // Bind to the user's events and some custom ones too
-    filters.live('click keypress', function(e) {
-        var f = $(this);
-
-        // Check if this is a standard filter or a radio
-        if (f.hasClass('radio') === true) {
-
-          // If this is a radio filter:
-          // - activate if inactive, and deactivate all others in the radio group
-          // - ignore if active
-          if (f.hasClass('active') === false) {
-
-            // Find the other active in this radio group and deactivate
-            // True here so we don't have 2 renders occurring, we'll just use the 2nd
+  (function($) {
+    var Facets, FilteredList, Sifter;
+    $.fn.extend({
+      facets: function(opts) {
+        var instance;
+        if (instance = this.data("facets")) {
+          this.removeData("facets");
+        }
+        return this.each(function() {
+          var el;
+          el = $(this);
+          instance = new Facets(el, opts);
+          return el.data("facets", instance);
+        });
+      }
+    });
+    Facets = function(el, opts) {
+      this.opts = $.extend(true, {}, this.defaults, opts);
+      this.container = $(el);
+      this.container.addClass("isFilterList");
+      this.groups = this.container.find(this.opts.groupedBy);
+      this.filters = this.$("" + (this.opts.selector) + " :not(.ignore)");
+      this.setupFilters();
+      _.bindAll(this, 'clearFilters', 'updateActiveFilters');
+      $(this.opts.clearFiltersSelector).live('click keypress', this.clearFilters);
+      this.container.bind("fl:activate fl:deactivate", this.updateActiveFilters);
+      this.setupHeadingTogglers();
+      if ($.isFunction(this.opts.afterSetup)) {
+        this.opts.afterSetup.apply(this);
+      }
+      return this;
+    };
+    Facets.prototype.defaults = {
+      selector: 'li a',
+      groupedBy: 'ul',
+      clearFiltersSelector: '.clear-filters',
+      useHeadingTogglers: false,
+      headingSelector: 'h5 a',
+      filterTypeRegexp: /^(\w+)\-/,
+      beforeUpdate: null,
+      afterSetup: null,
+      afterClear: null
+    };
+    Facets.prototype.$ = function(selector) {
+      return $(selector, this);
+    };
+    Facets.prototype.setupFilters = function() {
+      return filters.live('click keypress', function(e) {
+        var _a, f;
+        f = $(this);
+        if (f.hasClass('radio')) {
+          if (f.hasClass('active')) {
             f.parent().parent().find('.radio.active').trigger('fl:deactivate', true);
-
-            // Activate this one
             f.trigger('fl:activate');
           }
         } else {
-
-          // If this is a standard filter, toggle between active and inactive
-          f.trigger(f.hasClass('active') === true ? 'fl:deactivate' : 'fl:activate');
+          f.trigger((typeof (_a = f.hasClass('active')) !== "undefined" && _a !== null) ? _a : {
+            'fl:deactivate': 'fl:activate'
+          });
         }
-        e.preventDefault();
-      })
-      .live('fl:activate', activateFilter)
-      .live('fl:deactivate', deactivateFilter);
-  }
-
-  
-  function updateActiveFilters (e, noUpdate) {
-    // Callback
-    if ($.isFunction(opts.beforeUpdate)) {
-      opts.beforeUpdate.apply(container);
-    }
-
-    // Find all active filters and store data about them on the container
-    var activeFilters = filters.filter('.active'),
-        grouped = {},
-        active = [];
-
-    // Group by type into an object
-    activeFilters.each(function() {
-      var el = $(this),
-          id = el.attr('id'),
-          type;
-      if (id) {
-        type = id.match(opts.filterTypeRegexp);
-        if (type) {
-          if ($.isArray(grouped[type]) === false) {
-            grouped[type] = [];
+        return e.preventDefault();
+      }).live('fl:activate', this.activateFilter).live('fl:deactivate', this.deactivateFilter);
+    };
+    Facets.prototype.updateActiveFilters = function(e, noUpdate) {
+      var active, activeFilters, grouped;
+      if ($.isFunction(this.opts.beforeUpdate)) {
+        this.opts.beforeUpdate.apply(this);
+      }
+      activeFilters = this.filters.filter('.active');
+      grouped = {};
+      active = [];
+      activeFilters.each(__bind(function(el) {
+        var id, type;
+        el = $(el);
+        if (id = el.attr('id')) {
+          if (type = id.match(this.opts.filterTypeRegexp)) {
+            if (!($.isArray(grouped[type]))) {
+              grouped[type] = [];
+            }
+            return grouped[type].push(id);
           }
-          grouped[type].push(id);
         }
+      }, this));
+      $.each(grouped, function(k, v) {
+        return active.push(v);
+      });
+      return !(noUpdate) ? container.trigger("fl:filtersUpdated", [this, active]) : null;
+    };
+    Facets.prototype.clearFilters = function() {
+      this.deactivateAll();
+      this.updateActiveFilters();
+      if ($.isFunction(this.opts.afterClear)) {
+        this.opts.afterClear.apply(this.container);
+      }
+      return false;
+    };
+    Facets.prototype.deactivateAll = function() {
+      return this.filters.filter(':not(.radio)').removeClass('active');
+    };
+    Facets.prototype.deactivateFilter = function() {
+      return $(this).removeClass('active');
+    };
+    Facets.prototype.activateFilter = function() {
+      return $(this).addClass('active');
+    };
+    Facets.prototype.setupHeadingTogglers = function() {
+      return this.opts.useHeadingTogglers ? this.container.find(opts.headingSelector).each(__bind(function(el) {
+        var header;
+        header = $(el);
+        header.parent().parent().data('active', true).addClass('active');
+        return header.bind("click keypress", function() {
+          var parent;
+          parent = header.parent().parent();
+          return parent.toggleClass('active').data('active', !(parent.data('active')));
+        });
+      }, this)) : null;
+    };
+    $.fn.extend({
+      filteredList: function(opts) {
+        var instance;
+        if (instance = this.data("filteredList")) {
+          this.removeData("filteredList");
+        }
+        return this.each(function() {
+          var el;
+          el = $(this);
+          instance = new FilteredList(el, opts);
+          return el.data("filteredList", instance);
+        });
       }
     });
-
-    // Turn the above collection into an array of arrays
-    $.each(grouped, function(k, v) {
-      active.push(v);
-    });
-
-    // Unless we've supplied event data requesting that this be ignored
-    if (noUpdate !== true) {
-      // Emit that this happened
-      container.trigger("fl:filtersUpdated", [this, active]);
-    }
-  }
-  
-  function clearFilters () {
-    deactivateAll();
-    updateActiveFilters();
-    if ($.isFunction(opts.afterClear)) {
-      opts.afterClear.apply(container);
-    }
-    return false;
-  }
-  
-  function deactivateAll () {
-    filters.filter(':not(.radio)').removeClass('active');
-  }
-  
-  function deactivateFilter () {
-    $(this).removeClass('active');
-  }
-  
-  function activateFilter () {
-    $(this).addClass('active');
-  }
-  
-  function setupHeadingTogglers () {
-    if (opts.useHeadingTogglers === true) {
-      container.find(opts.headingSelector).each(function() {
-        var header = $(this);
-        // The parent should be the parent of both the header and the filters in this category
-        header.parent().parent()
-          .data('active', true)
-          .addClass('active');
-        header.bind("click keypress", function() {
-          var parent = header.parent().parent();
-          parent
-            .toggleClass('active')
-            .data('active', !(parent.data('active') === true));
-        });
+    FilteredList = function(el, opts) {
+      this.opts = $.extend(true, {}, this.defaults, opts);
+      this.container = $(this);
+      $.data(container, 'activeFilters', {});
+      this.container.addClass("filtered");
+      this.cacheFiltered();
+      this.parent = $(this.filtered.first()).parent();
+      this.setupFiltered();
+      _.bindAll(this, 'render');
+      this.container.bind("fl:render", this.render);
+      if ($.isFunction(this.opts.afterSetup)) {
+        this.opts.afterSetup.apply(this);
+      }
+      return this;
+    };
+    FilteredList.prototype.defaults = {
+      filteredSelector: 'tbody > tr',
+      afterSetup: null,
+      afterRender: null,
+      beforeRender: null,
+      activateOnSetup: true,
+      siblings: true
+    };
+    FilteredList.prototype.setupFiltered = function() {
+      this.filtered.live("fl:activate", this.activateItem).live("fl:deactivate", this.deactivateItem);
+      return this.opts.activateOnSetup ? this.activateAll() : null;
+    };
+    FilteredList.prototype.cacheFiltered = function() {
+      this.filtered = $(this.opts.filteredSelector, this.container).filter(':not(.empty-message)');
+      return !(this.opts.siblings) ? this.filtered.each(function() {
+        var item;
+        item = $(this);
+        return item.data('parent', item.parent());
+      }) : null;
+    };
+    FilteredList.prototype.putBack = function(collection) {
+      collection = collection || this.filtered;
+      return this.opts.siblings ? collection.appendTo(this.parent) : collection.each(function() {
+        var item;
+        item = $(this);
+        return item.data('parent').append(item);
       });
-    }
-  }
-
-}(jQuery));
-
-//
-// Filtered list plugin, used on results table
-//
-(function($) {
-  
-  var opts, container, filtered, parent;
-  
-  $.fn.extend({
-    filteredList: function(options) {
-      opts = $.extend({}, $.fn.filteredList.defaults, options);
-      return this.each(setup);
-    },
-    setActiveFilters: setActiveFilters,
-    setActiveFiltersFromSource: setActiveFiltersFromSource,
-    getActiveFilters: getActive,
-    hasContents: hasContents,
-    cacheFiltered: cacheFiltered,
-    setup: setup
-  });
-
-  
-  $.fn.filteredList.defaults = {
-    filteredSelector: 'tbody > tr',
-    afterSetup: null,
-    afterRender: null,
-    beforeRender: null,
-    activateOnSetup: true,
-    siblings: true
-  };
-
-  
-  function setup () {
-    container = $(this);  // This will probably be a table
-    // Set this up
-    $.data(container, 'activeFilters', {})
-    // Note that it's filtered
-    container.addClass("filtered");
-    // Setup the rows
-    cacheFiltered();
-    parent = $(filtered.first()).parent();
-    setupFiltered();
-    // Bind the custom render method
-    container.bind("fl:render", render);
-
-    if ($.isFunction(opts.afterSetup)) {
-      opts.afterSetup.apply(container);
-    }
-  }
-
-  
-  function setupFiltered () {
-    filtered
-      .live("fl:activate", activateItem)
-      .live("fl:deactivate", deactivateItem);
-    if (opts.activateOnSetup === true) {
-      // Visible by default, so let's make sure
-      activateAll();
-    }
-  }
-
-  
-  function cacheFiltered () {
-    filtered = $(opts.filteredSelector, container).filter(':not(.empty-message)');
-    // If the filtered items aren't siblings, we're going to keep track of each one's parent
-    if (opts.siblings === false) {
-      filtered.each(function () {
-        var item = $(this);
-        // Find this item's parent and store a reference to it in data
-        item.data('parent', item.parent());
-      });
-    }
-  }
-
-
-  // Puts a collection of items back into the DOM
-  function putBack (collection) {
-    collection = collection || filtered; // If a collection isn't supplied, use filtered
-    // If the items are siblings, just chuck them in together under the parent
-    // Otherwise, each one needs to be placed under its original parent
-    if (opts.siblings === true) {
-      collection.appendTo(parent);
-    } else {
-      collection.each(function () {
-        var item = $(this);
-        item.data('parent').append(item);
-      });
-    }
-  }
-
-  
-  function activateAll () {
-    filtered
-      .detach()
-      .addClass('active');
-    putBack();
-  }
-
-
-  function deactivateAll () {
-    filtered
-      .detach()
-      .removeClass('active');
-    putBack();
-  }
-
-  
-  function activateItem () {
-    $(this).addClass('active');
-  }
-
-  
-  function deactivateItem () {
-    $(this).removeClass('active');
-  }
-
-  
-  function render () {
-    // Expensive. Queue it.
-    $(document)
-      .queue('sifter', function() {
-        var active, detached, rows, els,
-            run_render = function() {
-              if (hasActiveFilters() === true) {
-                active = getActive(); // Fetch the active filters
-                detached = filtered.detach(); // Detach and make a copy of filtered
-                rows = detached;
-
-                // Loop through all filter groups. 'this' is an array of class names.
-                $.each(active, function() {
-                  if ( $.isArray(this) ) {
-                    var selector = '.' + this.join(',.'); // Selector for the filters
-                    rows = rows.filter(selector); // Reduce stored rows by selector
-                  } else if ( $.isFunction(this) ) {
-                    rows = $( $.grep( rows.get(), this ) );
-                  }
-                });
-
-
-                // Make rows unique and then activate those that remain
-                els = rows.get();
-                detached.each(function() {
-                  var el = $(this);
-                  if ($.inArray(this, els) >= 0) {
-                    if (el.hasClass('active') === false) {
-                      el.addClass('active');
-                    }
-                  } else {
-                    if (el.hasClass('active') === true) {
-                      el.removeClass('active');
-                    }
-                  }
-                });
-
-                // Add back into the dom
-                putBack(detached);
-
-              } else {
-
-                // If no filters are set, we're going to ensure everything is active
-                activateAll();
+    };
+    FilteredList.prototype.activateAll = function() {
+      filtered.detach().addClass('active');
+      return this.putBack();
+    };
+    FilteredList.prototype.deactivateAll = function() {
+      filtered.detach().removeClass('active');
+      return this.putBack();
+    };
+    FilteredList.prototype.activateItem = function() {
+      return $(this).addClass('active');
+    };
+    FilteredList.prototype.deactivateItem = function() {
+      return $(this).removeClass('active');
+    };
+    FilteredList.prototype.render = function() {
+      return $(document).queue('sifter', function() {
+        var run_render;
+        run_render = function() {
+          var detached, els, rows;
+          if (this.hasActiveFilters()) {
+            rows = (detached = this.filtered.detach());
+            $.each(this.getActive(), function() {
+              var selector;
+              if ($.isArray(this)) {
+                selector = '.' + this.join(',.');
+                return (rows = rows.filter(selector));
+              } else if ($.isFunction(this)) {
+                return (rows = $($.grep(rows.get(), this)));
               }
-
-              // Run after callback
-              if ($.isFunction(opts.afterRender)) {
-                opts.afterRender.apply(container);
-              }
-            };
-
-        // Run before callback
-        if ($.isFunction(opts.beforeRender)) {
-          opts.beforeRender.apply(container, [run_render]);
+            });
+            els = rows.get();
+            detached.each(function() {
+              var el;
+              el = $(this);
+              return $.inArray(this, els) >= 0 ? (!(el.hasClass('active')) ? el.addClass('active') : null) : (el.hasClass('active') ? el.removeClass('active') : null);
+            });
+            this.putBack(detached);
+          } else {
+            this.activateAll();
+          }
+          return $.isFunction(this.opts.afterRender) ? this.opts.afterRender.apply(this) : null;
+        };
+        if ($.isFunction(this.opts.beforeRender)) {
+          this.opts.beforeRender.apply(this, [run_render]);
         } else {
           run_render();
         }
-        
-        $(this).dequeue('sifter');
-      })
-      .delay(100, 'sifter')
-      .dequeue('sifter');
-  }
-  
-  function hasActiveFilters () {
-    var active = getActive();
-    return $.isArray(active) && active.length > 0;
-  }
-  
-  function hasContents () {
-    return filtered.length > 0;
-  }
-
-  function setActiveFilters (filters) {
-    setActiveFiltersFromSource(filters,'*');
-  }
-
-  function setActiveFiltersFromSource (filters,source) {
-    filtersBySource = $.data(container, 'activeFilters') || {};
-
-    // valid filters get keyed by source. That is to say, a source only has one set of active filters.
-    if ($.isArray(filters) || $.isFunction(filters)) {
-      filtersBySource[source] = filters;
-
-      $.data(container, 'activeFilters', filtersBySource);
-      container.trigger("fl:render");
-
-    } else if (filters === null) {
-      delete filtersBySource[source]
-
-      $.data(container, 'activeFilters', filtersBySource);
-      container.trigger("fl:render");
-    }
-  }
-  
-  function getActive () {
-    var filters = $.data(container, 'activeFilters'),
-        flatFilters = [];
-
-    // filters from all sources are merged into a single array.
-    if( $.isPlainObject(filters) ) {
-      $.each(filters,function(k,value) {
-        if ($.isArray(value)) {
-          $.merge(flatFilters,value);
-        } else {
-          flatFilters.push(value);
-        }
-      });
-
-      return flatFilters;
-    } else {
-      return [];
-    }
-  }
-  
-}(jQuery));
-
-//
-// Sifter plugin, using both of the above plugins
-//
-(function($) {
-  
-  var opts, container, filteredList, filterList;
-  
-  $.fn.extend({
-    sifter: function(options) {
-      opts = $.extend(true, {}, $.fn.sifter.defaults, options);
-      return this.each(setup);
-    }
-  });
-  
-  $.fn.sifter.defaults = {
-    filterList: '#filterList',
-    filteredList: '#filteredList',
-    filterUpdateEvent: 'fl:filtersUpdated',
-    filterListOpts: {},
-    filteredListOpts: {},
-    afterSetup: null
-  };
-  
-  function setup () {
-    // Store some key elements
-    container = $(this);
-    filteredList = container.find(opts.filteredList);
-    filterList = container.find(opts.filterList);
-    // Set up the plugins
-    // We're queueing these because it can get slow when dealing 
-    // with a lot of data
-    filteredList.filteredList(opts.filteredListOpts);
-    filterList.filterList(opts.filterListOpts);
-
-    // When we hear this event, we're going to work
-    container.bind(opts.filterUpdateEvent, applyActiveFilters);
-
-    // Trigger callback
-    if ($.isFunction(opts.afterSetup)) {
-      opts.afterSetup.apply(container);
-    }
-  }
-  
-  // Move the active filter list filters to the filtered list
-  function applyActiveFilters (event, source, activeFilters) {
-    // Make sure that we have results to filter
-    if ($.isArray(activeFilters) && filteredList.hasContents() === true) {
-      // Delay this too
-      $(document)
-        .queue('sifter', function() {
-          filteredList.setActiveFiltersFromSource(activeFilters,source);
-          $(this).dequeue('sifter');
-        })
-        .dequeue('sifter');
-    }
-  }
-  
-}(jQuery));
+        return $(this).dequeue('sifter');
+      }).delay(100, 'sifter').dequeue('sifter');
+    };
+    FilteredList.prototype.hasActiveFilters = function() {
+      var active;
+      active = this.getActive();
+      return $.isArray(active) && active.length > 0;
+    };
+    FilteredList.prototype.hasContents = function() {
+      return this.filtered.length > 0;
+    };
+    FilteredList.prototype.setActiveFilters = function(filters) {
+      return this.setActiveFiltersFromSource(filters, '*');
+    };
+    FilteredList.prototype.setActiveFiltersFromSource = function(filters, source) {
+      var filtersBySource;
+      filtersBySource = $.data(this.container, 'activeFilters') || {};
+      if ($.isArray(filters) || $.isFunction(filters)) {
+        filtersBySource[source] = filters;
+        $.data(this.container, 'activeFilters', filtersBySource);
+        return this.container.trigger("fl:render");
+      } else if (filters === null) {
+        delete filtersBySource[source];
+        $.data(this.container, 'activeFilters', filtersBySource);
+        return this.container.trigger("fl:render");
+      }
+    };
+    FilteredList.prototype.getActive = function() {
+      var filters, flatFilters;
+      filters = $.data(this.container, 'activeFilters');
+      flatFilters = [];
+      if ($.isPlainObject(filters)) {
+        $.each(filters, function(k, value) {
+          return ($.isArray(value)) ? $.merge(flatFilters, value) : flatFilters.push(value);
+        });
+        return flatFilters;
+      } else {
+        return [];
+      }
+    };
+    Sifter = function() {
+      var container, filterList, filteredList;
+      container = $(this);
+      filteredList = container.find(opts.filteredList);
+      filterList = container.find(opts.filterList);
+      filteredList.filteredList(opts.filteredListOpts);
+      filterList.filterList(opts.filterListOpts);
+      container.bind(opts.filterUpdateEvent, applyActiveFilters);
+      if ($.isFunction(opts.afterSetup)) {
+        opts.afterSetup.apply(container);
+      }
+      return this;
+    };
+    Sifter.prototype.defaults = {
+      filterList: '#filterList',
+      filteredList: '#filteredList',
+      filterUpdateEvent: 'fl:filtersUpdated',
+      filterListOpts: {},
+      filteredListOpts: {},
+      afterSetup: null
+    };
+    Sifter.prototype.applyActiveFilters = function(event, source, activeFilters) {
+      return ($.isArray(activeFilters) && filteredList.hasContents() === true) ? $(document).queue('sifter', function() {
+        filteredList.setActiveFiltersFromSource(activeFilters, source);
+        return $(this).dequeue('sifter');
+      }).dequeue('sifter') : null;
+    };
+    return Sifter;
+  })(jQuery);
+})();
