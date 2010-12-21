@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>jQuery.sifter: search</title>
+    <style>
+      #facetList .active {font-weight:bold}
+      #filteredList li {display:none}
+      #filteredList li.active {display:block}
+    </style>
+  </head>
+  <body>
+    <h1>Example</h1>
+    <h2>Search</h2>
+    <div>
+      <ul id="facetList">
+        <li>
+          <h3>Date</h3>
+          <input name="date">
+        <li>
+          <h3>Size</h3>
+          <ul>
+            <li><a href="#" id="size-big">Big</a></li>
+            <li><a href="#" id="size-medium">Medium</a></li>
+            <li><a href="#" id="size-small">Small</a></li>
+          </ul>
+        </li>
+        <li>
+          <h3>Type</h3>
+          <ul>
+            <li><a href="#" id="type-animate">Animate</a></li>
+            <li><a href="#" id="type-inanimate">Inanimate</a></li>
+          </ul>
+        </li>
+      </ul>
+      <a href="#" class="clear-filters">Clear filters</a>
+      <ul id="filteredList">
+        <li class="type-inanimate size-big" data-date="2010-11-12">House</li>
+        <li class="type-inanimate size-medium" data-date="2010-11-15">Car</li>
+        <li class="type-animate size-small" data-date="2010-12-25">Mouse</li>
+        <li class="type-inanimate size-big" data-date="2011-02-02">Ship</li>
+        <li class="type-animate size-medium" data-date="2013-12-25">Cat</li>
+        <li class="type-animate size-small" data-date="2009-05-05">Toadstool</li>
+        <li class="type-animate size-big" data-date="2010-12-25">Blue Whale</li>
+        <li class="type-inanimate size-small" data-date="2010-12-25">Button</li>
+      </ul>
+    </div>
+    <script src="../lib/jquery-1.4.4.min.js"></script>
+    <script src="../src/jquery.sifter.js"></script>
+    <script>
+      $(function() {
+        dateProcessor = function(row) {
+          console.log("row",row)
+
+          try {
+            var parts = $(row).data('date').split('-')
+            var date = new Date(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]))
+            return {date: date};
+          } catch(e) {
+            return {date: new Date(0)}
+          }
+
+        }
+
+        $('div').sifter({
+          filteredListOpts: {
+            filteredSelector: 'li',
+            processors: [ dateProcessor ]
+          }
+        });
+
+        filteredList = $('#filteredList').data('filteredList')
+
+        filteredList.filtered.each(function() {
+          console.log($.data(this,'date'))
+        })
+
+        /*
+        $('#facetList :input[name=date]').bind('keyup change', function(e) {
+          e.preventDefault();
+
+          var term = $.trim($(this).val()).toLowerCase(),
+              filter;
+
+          if( term == '' ) {
+            filter = null;
+          } else {
+            filter = function(row,index) {
+              var text = $.trim($(row).text()).toLowerCase();
+              console.log( "filtering for", text, "vs", term)
+              return text.indexOf(term) > -1;
+            }
+          }
+
+          filteredList.setActiveFiltersFromSource(filter,this);
+          
+        }); // bind keyup change
+        */
+        
+      });
+    </script>
+  </body>
+</html>

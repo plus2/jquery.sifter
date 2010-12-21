@@ -155,14 +155,29 @@
       afterRender: null,
       beforeRender: null,
       activateOnSetup: true,
-      siblings: true
+      siblings: true,
+      processors: null
     };
     FilteredList.prototype.setupFiltered = function() {
       this.filtered.live("fl:activate", this.activateItem).live("fl:deactivate", this.deactivateItem);
       return this.opts.activateOnSetup ? this.activateAll() : null;
     };
     FilteredList.prototype.cacheFiltered = function() {
+      var processors;
       this.filtered = $(this.opts.filteredSelector, this.container).filter(':not(.empty-message)');
+      if ($.isArray(this.opts.processors) && this.opts.processors.length) {
+        processors = this.opts.processors;
+        this.filtered.each(function() {
+          var _i, _len, _ref, data, proc;
+          data = {};
+          _ref = processors;
+          for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+            proc = _ref[_i];
+            $.extend(true, data, proc.call(this, this));
+          }
+          return $(this).data(data);
+        });
+      }
       return !(this.opts.siblings) ? this.filtered.each(function() {
         var item;
         item = $(this);

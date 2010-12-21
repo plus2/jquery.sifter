@@ -192,6 +192,7 @@
       beforeRender: null
       activateOnSetup: true
       siblings: true
+      processors: null
 
 
     constructor: (el,opts) ->
@@ -227,6 +228,19 @@
 
     cacheFiltered: () ->
       @filtered = $(@opts.filteredSelector, @container).filter(':not(.empty-message)')
+
+      # cache the preprocessed value of each row
+      if $.isArray(@opts.processors) && @opts.processors.length
+        processors = @opts.processors
+
+        @filtered.each ->
+          data = {}
+
+          for proc in processors
+            $.extend true, data, proc.call(@,@)
+
+          $(@).data(data)
+
 
       # If the filtered items aren't siblings, we're going to keep track of each one's parent
       unless @opts.siblings
