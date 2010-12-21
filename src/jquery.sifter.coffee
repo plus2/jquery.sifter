@@ -343,7 +343,7 @@
 
 
     isValidFilter: (filter) ->
-      $.isArray(filter) || $.isFunction(filter)
+      $.isArray(filter) || $.isFunction(filter) || filter == null
 
 
     setActiveFiltersFromSource: (filters, source) ->

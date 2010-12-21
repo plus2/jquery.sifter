@@ -1,11 +1,12 @@
 (function() {
-  var __bind = function(func, context) {
+  var __slice = Array.prototype.slice, __bind = function(func, context) {
     return function(){ return func.apply(context, arguments); };
   };
   (function($) {
     var FacetList, FilteredList, Sifter, callback;
-    callback = function(name, args) {
-      var fn;
+    callback = function(name) {
+      var args, fn;
+      args = __slice.call(arguments, 1);
       fn = (function() {
         if ($.isFunction(name)) {
           return name;
@@ -13,10 +14,7 @@
           return this.opts[name];
         }
       }).call(this);
-      if (fn) {
-        args = slice.call(arguments, 2);
-        return fn.apply(this, args);
-      }
+      return fn ? fn.apply(this, args) : null;
     };
     $.fn.extend({
       facetList: function(opts) {
@@ -241,7 +239,7 @@
       return this.setActiveFiltersFromSource(filters, '*');
     };
     FilteredList.prototype.isValidFilter = function(filter) {
-      return $.isArray(filter) || $.isFunction(filter);
+      return $.isArray(filter) || $.isFunction(filter) || filter === null;
     };
     FilteredList.prototype.setActiveFiltersFromSource = function(filters, source) {
       if (!(this.isValidFilter(filters) && this.hasContents())) {
