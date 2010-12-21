@@ -5,14 +5,13 @@
 
   ## Helpers
   # simple callback helper, DRYs up a few lines
-  callback = (name,args) ->
+  callback = (name,args...) ->
     fn = if $.isFunction(name)
           name
          else if $.isFunction(@opts[name])
            @opts[name]
 
     if fn
-      args = slice.call(arguments, 2)
       fn.apply(@,args)
 
 
